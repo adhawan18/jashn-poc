@@ -3,11 +3,10 @@ import { SafeAreaView, ScrollView, StyleSheet, Text, View, Switch, TouchableOpac
 import { PermissionsAndroid, Platform } from 'react-native';
 import { ClientRoleType, createAgoraRtcEngine, IRtcEngine, RtcSurfaceView, ChannelProfileType } from 'react-native-agora';
 import RtmEngine from 'agora-react-native-rtm';
+import LinearGradient from 'react-native-linear-gradient';
 
-
-const { height } = Dimensions.get('window');
-const imageContainerHeight = 0.6 * height;
-const quizContainerHeight = 0.4 * height;
+const { width, height } = Dimensions.get('window');
+const aspectRatio = width / height;
 
 const appId = '70e1a03bf90645718299160e0fb1b38e';
 const channelName = 'test18';
@@ -38,7 +37,9 @@ const Agora = ({ joined }: AgoraProps) => {
     const [optionsRcvd, setOptions] = useState<string[]>([]);
     const [showingQuestion, setShowingQuestion] = useState(false);
     const [rightAnswer, setRightAnswer] = useState('');
-
+    const [answeredRight, setAnsweredRight] = useState(false);
+    const [selectedButtonBgc, setSelectedButtonBgc] = useState('');
+    
     const [startTime, setStartTime] = useState<number | null>(null);
     const [endTime, setEndTime] = useState<number | null>(null);
     const [timeDifference, setTimeDifference] = useState<number | null>(null);
@@ -50,6 +51,7 @@ const Agora = ({ joined }: AgoraProps) => {
         setShowingQuestion(false);
         if (rightAnswer == answer) {
             setEndTime(Date.now());
+            setAnsweredRight(true);
             // if (startTime && endTime) {
             //     setTimeDifference(endTime - startTime);
             // }
@@ -160,42 +162,6 @@ const Agora = ({ joined }: AgoraProps) => {
             console.log(evt);
         });
 
-        // rtmEngineRef?.on('channelMemberJoined', (evt) => {
-        //   let {channelName, seniors, peerIds, inCall} = this.state;
-        //   let {channelId, uid} = evt;
-        //   // if we're in call and receive a lobby message and also we're the senior member (oldest member in the channel), signal channel status to joined peer
-        //   if (inCall && channelId === 'lobby' && seniors.length < 2) {
-        //     rtmEngineRef
-        //       ?.sendMessageToPeer({
-        //         peerId: uid,
-        //         text: channelName + ':' + (peerIds.length + 1),
-        //         offline: false,
-        //       })
-        //       .catch((e) => console.log(e));
-        //   }
-        // });
-
-        // rtmEngineRef?.on('channelMemberLeft', (evt) => {
-        //   let {channelId, uid} = evt;
-        //   let {channelName, seniors, inCall, peerIds, rooms} = this.state;
-        //   if (channelName === channelId) {
-        //     // Remove seniors UID from state array
-        //     this.setState({
-        //       seniors: seniors.filter((id) => id !== uid),
-        //       rooms: {...rooms, [channelName]: peerIds.length},
-        //     });
-        //     if (inCall && seniors.length < 2) {
-        //       // if we're in call and we're the senior member (oldest member in the channel), signal channel status to all users
-        //       rtmEngineRef
-        //         ?.sendMessageByChannelId(
-        //           'lobby',
-        //           channelName + ':' + (peerIds.length + 1),
-        //         )
-        //         .catch((e) => console.log(e));
-        //     }
-        //   }
-        // });
-
         rtmEngineRef.on('channelMessageReceived', (evt) => {
             // received message is of the form - channel:membercount, add it to the state
             let { text } = evt;
@@ -232,34 +198,37 @@ const Agora = ({ joined }: AgoraProps) => {
         console.log("Right Answer: ", timeDifference);
     }, [joined, join, setupVideoSDKEngine, initRTM, endTime, startTime]);
 
+    if (!isJoined || isHost || remoteUid == 0) {
+        return (
+            <Text style={{
+                flex: 1,
+                justifyContent: 'center',
+                textAlign: 'center',
+                alignSelf: 'center',
+                flexDirection: 'column',
+                paddingHorizontal: 20,
+                paddingTop: '50%',
+                fontSize: 20,
+                color: 'white'
+            }}>Game has not yet started.{"\n"} Wait for the fun to begin !</Text>
+
+        );
+    }
+
     if (showingQuestion) {
         return (
             <SafeAreaView style={styles.middle}>
                 <View style={styles.imageContainer}>
                     <View style={styles.scroll}>
-                        {isJoined && isHost ? (
-                            <React.Fragment key={0}>
-                                <RtcSurfaceView canvas={{ uid: 0 }} style={styles.videoView} />
-                                <Text>Local user uid: {uid}</Text>
-                            </React.Fragment>
-                        ) : (
-                            <Text>{isHost ? 'Join a channel' : ''}</Text>
-                        )}
-                        {isJoined && !isHost && remoteUid !== 0 ? (
-                            <React.Fragment key={remoteUid}>
-                                <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
-                                {/* <Text>Remote user uid: {remoteUid}</Text> */}
-                            </React.Fragment>
-                        ) : (
-                            <Text>{isJoined && !isHost ? 'Waiting for a remote user to join' : ''}</Text>
-                        )}
+                        <React.Fragment key={remoteUid}>
+                            <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
+                        </React.Fragment>
                     </View>
-                    {/* <Text style={styles.info}>{message}</Text> */}
                 </View>
 
-                <View style={styles.quizContainer}>
+                <LinearGradient style={styles.quizContainer} colors={['rgba(20, 20, 20, 0.1)', 'rgba(20, 20, 20, 1)']} start={{ x: 0.5, y: 0.1 }}>
                     <View style={styles.questionContainer}>
-                        <Text style={styles.questionText}>Q.{questionRcvd}</Text>
+                        <Text style={styles.questionText}>{questionRcvd}</Text>
                     </View>
                     <View style={styles.answerContainer}>
                         <TouchableOpacity
@@ -268,7 +237,7 @@ const Agora = ({ joined }: AgoraProps) => {
                                 selectedAnswer === 'A' ? styles.selectedButton : null,
                             ]}
                             onPress={() => handleAnswerSelected(optionsRcvd[0])}>
-                            <Text style={styles.answerText}>A. {optionsRcvd[0]}</Text>
+                            <Text style={styles.answerText}>{optionsRcvd[0]}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[
@@ -276,7 +245,7 @@ const Agora = ({ joined }: AgoraProps) => {
                                 selectedAnswer === 'B' ? styles.selectedButton : null,
                             ]}
                             onPress={() => handleAnswerSelected(optionsRcvd[1])}>
-                            <Text style={styles.answerText}>B. {optionsRcvd[1]}</Text>
+                            <Text style={styles.answerText}>{optionsRcvd[1]}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[
@@ -284,7 +253,7 @@ const Agora = ({ joined }: AgoraProps) => {
                                 selectedAnswer === 'C' ? styles.selectedButton : null,
                             ]}
                             onPress={() => handleAnswerSelected(optionsRcvd[2])}>
-                            <Text style={styles.answerText}>C. {optionsRcvd[2]}</Text>
+                            <Text style={styles.answerText}>{optionsRcvd[2]}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[
@@ -292,35 +261,59 @@ const Agora = ({ joined }: AgoraProps) => {
                                 selectedAnswer === 'D' ? styles.selectedButton : null,
                             ]}
                             onPress={() => handleAnswerSelected(optionsRcvd[3])}>
-                            <Text style={styles.answerText}>D. {optionsRcvd[3]}</Text>
+                            <Text style={styles.answerText}>{optionsRcvd[3]}</Text>
+                        </TouchableOpacity>
+
+                    </View>
+                    {/* Footer */}
+                    <View style={styles.footer}>
+                        <TouchableOpacity style={styles.footerButton}>
+                            <Image
+                                source={require('../Assets/Images/footer1.png')}
+                                style={styles.footerButtonImg}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.footerButton}>
+                            <Image
+                                source={require('../Assets/Images/footer2.png')}
+                                style={styles.footerButtonImg}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.footerButton}>
+                            <Image
+                                source={require('../Assets/Images/footer3.png')}
+                                style={styles.footerButtonImg}
+                            />
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.footerButton}>
+                            <Image
+                                source={require('../Assets/Images/footer4.png')}
+                                style={styles.footerButtonImg}
+                            />
                         </TouchableOpacity>
                     </View>
-                </View>
+                </LinearGradient>
             </SafeAreaView>
         );
     } else {
         return (
+
+            //             {isJoined && !isHost && remoteUid !== 0 ? (
+            //                 <React.Fragment key={remoteUid}>
+            //                     <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
+            //                     {/* <Text>Remote user uid: {remoteUid}</Text> */}
+            //                 </React.Fragment>
+            //             ) : (
+            //                 <Text>{isJoined && !isHost ? 'Waiting for a remote user to join' : ''}</Text>
+            //             )}
+
             <View style={styles.middle}>
                 <View style={styles.imageContainer}>
                     <View style={styles.scroll}>
-                        {isJoined && isHost ? (
-                            <React.Fragment key={0}>
-                                <RtcSurfaceView canvas={{ uid: 0 }} style={styles.videoView} />
-                                <Text>Local user uid: {uid}</Text>
-                            </React.Fragment>
-                        ) : (
-                            <Text>{isHost ? 'Join a channel' : ''}</Text>
-                        )}
-                        {isJoined && !isHost && remoteUid !== 0 ? (
-                            <React.Fragment key={remoteUid}>
-                                <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
-                                {/* <Text>Remote user uid: {remoteUid}</Text> */}
-                            </React.Fragment>
-                        ) : (
-                            <Text>{isJoined && !isHost ? 'Waiting for a remote user to join' : ''}</Text>
-                        )}
+                        <React.Fragment key={remoteUid}>
+                            <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
+                        </React.Fragment>
                     </View>
-                    {/* <Text style={styles.info}>{message}</Text> */}
                 </View>
             </View>
 
@@ -328,11 +321,17 @@ const Agora = ({ joined }: AgoraProps) => {
         );
     }
 
+
+
+
+
+
+
     // function showMessage(msg: string) {
     //     setMessage(msg);
     // }
     function setQuestionAndAns(data: any) {
-        setQuestion(data[0] + ' ' + data[1]);
+        setQuestion(data[1]);
         let tempArr = [];
         tempArr.push(data[2]);
         tempArr.push(data[3]);
@@ -342,36 +341,19 @@ const Agora = ({ joined }: AgoraProps) => {
         setShowingQuestion(true);
         setRightAnswer(data[6]);
         setStartTime(Date.now());
+        setAnsweredRight(false);
     }
 };
 
 const styles = StyleSheet.create({
-    // button: {
-    //     paddingHorizontal: 25,
-    //     paddingVertical: 4,
-    //     fontWeight: 'bold',
-    //     color: '#ffffff',
-    //     backgroundColor: '#0055cc',
-    //     margin: 5,
-    // },
-    // main: {
-    //     flex: 1,
-    //     alignItems: 'center'
-    // },
     scroll: {
         flex: 1,
         backgroundColor: 'lightgreen',
         // width: '100%'
     },
-    // videoView: {
-    //     backgroundColor: 'blue',
-    //     width: 700,
-    //     height: 700,
-    //     // flex:1,
-    // },
     videoView: {
         width: '100%',
-        aspectRatio: 9 / 16,
+        aspectRatio: aspectRatio,
         alignSelf: 'center',
         justifyContent: 'center',
         resizeMode: 'cover',
@@ -407,7 +389,7 @@ const styles = StyleSheet.create({
         resizeMode: 'contain',
     },
     quizContainer: {
-        flex: 1,
+        flex: 2,
         backgroundColor: 'rgba(80, 80, 80, 0.3)',
         paddingHorizontal: '10%',
         paddingTop: '8%',
@@ -416,11 +398,14 @@ const styles = StyleSheet.create({
     questionContainer: {
         marginBottom: 16,
         alignSelf: 'stretch',
+        justifyContent: 'center',
+        alignItems: 'center'
     },
     questionText: {
-        fontSize: 30,
-        fontWeight: 'bold',
-        color: 'white'
+        fontSize: 28,
+        color: 'white',
+        justifyContent: 'center',
+        textAlign: 'center',
     },
     answerContainer: {
         flexDirection: 'column',
@@ -431,14 +416,35 @@ const styles = StyleSheet.create({
         marginVertical: 8,
         borderWidth: 1,
         borderRadius: 8,
-        borderColor: '#ccc',
-        backgroundColor: '#fff',
+        backgroundColor: 'rgba(200, 200, 200, 0.8)',
     },
     selectedButton: {
         backgroundColor: '#ccc',
     },
     answerText: {
         fontSize: 18,
+        justifyContent: 'center',
+        alignSelf: 'center',
+        color: 'white'
+    },
+    footer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        padding: 10,
+        paddingBottom: 20,
+        // backgroundColor: 'black',
+    },
+    footerButton: {
+        paddingVertical: 0,
+        paddingHorizontal: 0,
+        borderWidth: 1,
+        borderRadius: 8,
+        borderColor: '#ccc',
+        backgroundColor: '#fff',
+    },
+    footerButtonImg: {
+
     },
 });
 

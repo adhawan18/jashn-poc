@@ -19,12 +19,13 @@ const App = () => {
   };
   if (!showMainScreen) {
     return (
-      <View style={styles.container}>
+      <LinearGradient style={styles.container} colors={['#402d74', '#f82e84']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} >
         <View style={styles.logoContainer}>
           <Image
-            source={require('./Assets/Images/jashn_logo.png')}
+            source={require('./Assets/Images/jashnLogoWBG.png')}
             style={styles.logoImage}
           />
+          <Text style={styles.logoText}>India ka live game show app</Text>
         </View>
         <TouchableOpacity
           style={styles.joinButton}
@@ -32,19 +33,19 @@ const App = () => {
         >
           <Text style={styles.joinButtonText}>Join</Text>
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
     );
   }
   return (
-    <View style={styles.container}>
+    <LinearGradient style={styles.container} colors={['#402d74', '#f82e84']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} >
       {/* Header */}
       <View style={styles.header}>
         <Image
-          source={require('./Assets/Images/live_logo.png')}
+          source={require('./Assets/Images/jashnLogoWBG.png')}
           style={styles.headerImage}
         />
         <Image
-          source={require('./Assets/Images/jashn_logo.png')}
+          source={require('./Assets/Images/live_logo.png')}
           style={styles.headerImage}
         />
       </View>
@@ -60,39 +61,7 @@ const App = () => {
       <Agora joined={showMainScreen} />
       {/* </Text> */}
 
-
-      {/* Footer */}
-      <LinearGradient 
-      colors={['rgb(80, 80, 80)','rgb(0, 0, 0)' ]} 
-      style={styles.footer}
-      start={{ x: 0.5, y: 0 }}>
-        <TouchableOpacity style={styles.footerButton}>
-          <Image
-            source={require('./Assets/Images/footer1.png')}
-            style={styles.footerButtonImg}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Image
-            source={require('./Assets/Images/footer2.png')}
-            style={styles.footerButtonImg}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Image
-            source={require('./Assets/Images/footer3.png')}
-            style={styles.footerButtonImg}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton}>
-          <Image
-            source={require('./Assets/Images/footer4.png')}
-            style={styles.footerButtonImg}
-          />
-        </TouchableOpacity>
-      </LinearGradient>
-
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -100,17 +69,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
-    backgroundColor: '#8f2235',
   },
   logoContainer: {
     alignItems: 'center',
     // justifyContent: 'center',
     flex: 1,
+    // backgroundColor: 'red'
   },
   logoImage: {
-    width: 400,
-    height: 400,
+    marginTop: '20%',
+    width: "95%",
     resizeMode: 'contain',
+  },
+  logoText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
   joinButton: {
     backgroundColor: '#ed5616',
@@ -131,33 +105,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    paddingHorizontal: '10%',
+    paddingVertical: '3%',
+    // borderBottomWidth: 1,
+    // borderBottomColor: '#ccc',
   },
   headerImage: {
-    width: 24,
-    height: 24,
-  },
-  footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-around',
-    padding: 10,
-    paddingBottom: 20,
-    // backgroundColor: 'black',
-  },
-  footerButton: {
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-    borderWidth: 1,
-    borderRadius: 8,
-    borderColor: '#ccc',
-    backgroundColor: '#fff',
-  },
-  footerButtonImg: {
-
+    width:'25%',
+    height:20,
+    resizeMode: 'contain',
   },
 });
 
