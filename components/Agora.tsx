@@ -1,9 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, Switch, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, Text, View, Switch, TouchableOpacity, Image, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { ClientRoleType, createAgoraRtcEngine, IRtcEngine, RtcSurfaceView, ChannelProfileType } from 'react-native-agora';
 import RtmEngine from 'agora-react-native-rtm';
 import LinearGradient from 'react-native-linear-gradient';
+import ProgressCircle from './ProgressTimer';
 
 const { width, height } = Dimensions.get('window');
 const aspectRatio = width / height;
@@ -38,33 +39,106 @@ const Agora = ({ joined }: AgoraProps) => {
     const [showingQuestion, setShowingQuestion] = useState(false);
     const [rightAnswer, setRightAnswer] = useState('');
     const [answeredRight, setAnsweredRight] = useState(false);
-    const [selectedButtonBgc, setSelectedButtonBgc] = useState('');
-    
+    const [haveAnswered, setHaveAnswered] = useState(false);
+    const [selectedButton, setSelectedButton] = useState({ backgroundColor: '#f82d87', });
+    const [questionScreenType, setQuestionScreenType] = useState(0);
+    //0 MEANS,QUES RECIEVED, 1 MEANS RIGHT ANSWER, 2 MEANS WRONG ANSWER, 3 DIDNT ANSWERRED, 4 TIMES UP 
+
     const [startTime, setStartTime] = useState<number | null>(null);
     const [endTime, setEndTime] = useState<number | null>(null);
     const [timeDifference, setTimeDifference] = useState<number | null>(null);
 
 
-    const handleAnswerSelected = (answer: any) => {
-        console.log(answer);
-        setSelectedAnswer(answer);
-        setShowingQuestion(false);
-        if (rightAnswer == answer) {
-            setEndTime(Date.now());
-            setAnsweredRight(true);
-            // if (startTime && endTime) {
-            //     setTimeDifference(endTime - startTime);
-            // }
-        } else {
-            console.log("Wrong Answer");
-        }
-    };
+    const [progress, setProgressForStopWatch] = useState(0);
 
+    const handleAnswerSelected = (answer: any) => {
+
+        setSelectedAnswer(answer);
+    
+        setHaveAnswered(true);
+        setEndTime(Date.now());
+        if (rightAnswer !== '' && rightAnswer === answer) {
+            setAnsweredRight(true);
+            if (startTime && endTime) {
+                setTimeDifference(endTime - startTime);
+            }
+        } else {
+            setAnsweredRight(false);
+        }
+        console.log("haveAnswered",haveAnswered);
+        console.log("answeredRight",answeredRight);
+    };
+    
+    
+    const startTimer = () => {
+        console.log("progress1 ", progress);
+        setTimeout(incTimer, 1000);
+    }
+
+    function incTimer() {
+        setProgressForStopWatch(prevProgress => {
+            const newProgress = prevProgress + 1;
+
+            console.log("answeredRight11",answeredRight);
+            console.log("haveAnswered11",haveAnswered);
+            if (newProgress < 10) {
+                setTimeout(incTimer, 1000);
+            }else{
+                answerMarking();
+            }
+
+            return newProgress;
+        });
+
+    }
+
+    function answerMarking() {
+        console.log("haveAnswered",haveAnswered);
+        console.log("answeredRight",answeredRight);
+        if (haveAnswered) {
+            if (answeredRight) {
+                setQuestionScreenType(1);
+                setSelectedButton({ backgroundColor: '#32bd01', });
+                console.log("Answer check: Answered Right");
+            } else {
+                setQuestionScreenType(2);
+                setSelectedButton({ backgroundColor: '#ec5632', });
+                console.log("Answer check: Answered Wrong");
+            }
+        } else {
+            setQuestionScreenType(3);
+            console.log("Answer check: Didnt Answered");
+        }
+    }
+
+    function handleQuestionInitialisation() {
+        console.log("answeredRight22", answeredRight);
+        console.log("haveAnswered22",haveAnswered);
+        setQuestionScreenType(0);
+        setShowingQuestion(true);
+        setStartTime(Date.now());
+        setAnsweredRight(false);
+        setHaveAnswered(false);
+        console.log("answeredRight", answeredRight);
+        console.log("haveAnswered",haveAnswered);
+    
+        setProgressForStopWatch(0);
+        startTimer();
+    
+        // let answerMarkingInterval = setInterval(answerMarking, 13000);
+        // setTimeout(() => clearInterval(answerMarkingInterval), 20000);
+    
+        setTimeout(() => {
+            setShowingQuestion(false);
+        }, 20000);
+    }
+    
     const join = async () => {
         if (isJoined) {
             return;
         }
         try {
+            await setupVideoSDKEngine();
             agoraEngineRef.current?.setChannelProfile(
                 ChannelProfileType.ChannelProfileLiveBroadcasting,
             );
@@ -84,6 +158,8 @@ const Agora = ({ joined }: AgoraProps) => {
                 let fetchedRtmToken = await FetchRtmToken(uid);
                 await rtmEngineRef?.login({ uid: uid.toString(), token: fetchedRtmToken }).catch((e) => console.log(e));
                 await rtmEngineRef?.joinChannel('demoChannel').catch((e) => console.log(e));
+
+
             }
         } catch (e) {
             console.log(e);
@@ -186,17 +262,34 @@ const Agora = ({ joined }: AgoraProps) => {
 
     useEffect(() => {
         // Initialize Agora engine when the app starts
-        if (joined) {
-            join();
-            setupVideoSDKEngine();
-            initRTM();
+        async function setup() {
+            if (joined) {
+                await setupVideoSDKEngine();
+                await join();
+                await initRTM();
+                console.log("Aasihsh");
+            }
+            console.log("Aasihsh1");
         }
-        if (startTime && endTime) {
-            setTimeDifference(endTime - startTime);
-        }
-        console.log(startTime, endTime, timeDifference);
-        console.log("Right Answer: ", timeDifference);
-    }, [joined, join, setupVideoSDKEngine, initRTM, endTime, startTime]);
+        setup();
+        // if (startTime && endTime) {
+        //     setTimeDifference(endTime - startTime);
+        // }
+        // console.log(startTime, endTime, timeDifference);
+        // console.log("Right Answer: ", timeDifference);
+        console.log("Aasihsh1");
+    }, [joined]);
+
+    // useEffect(() => {
+    // Initialize Agora engine when the app starts
+
+    // if (startTime && endTime) {
+    //     setTimeDifference(endTime - startTime);
+    // }
+    // console.log(startTime, endTime, timeDifference);
+    // console.log("Right Answer: ", timeDifference);
+
+    // }, [endTime, startTime]);
 
     if (!isJoined || isHost || remoteUid == 0) {
         return (
@@ -226,42 +319,51 @@ const Agora = ({ joined }: AgoraProps) => {
                     </View>
                 </View>
 
+
                 <LinearGradient style={styles.quizContainer} colors={['rgba(20, 20, 20, 0.1)', 'rgba(20, 20, 20, 1)']} start={{ x: 0.5, y: 0.1 }}>
+                    <View style={styles.circleContainer}>
+                        <ProgressCircle progress={progress} />
+                    </View>
                     <View style={styles.questionContainer}>
                         <Text style={styles.questionText}>{questionRcvd}</Text>
+                        {/* <Text style={styles.questionText}>Which of the following is national bird of India</Text> */}
                     </View>
                     <View style={styles.answerContainer}>
                         <TouchableOpacity
                             style={[
                                 styles.answerButton,
-                                selectedAnswer === 'A' ? styles.selectedButton : null,
+                                selectedAnswer == optionsRcvd[0] ? selectedButton : null,
                             ]}
                             onPress={() => handleAnswerSelected(optionsRcvd[0])}>
                             <Text style={styles.answerText}>{optionsRcvd[0]}</Text>
+                            {/* <Text style={styles.answerText}>Parrot</Text> */}
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[
                                 styles.answerButton,
-                                selectedAnswer === 'B' ? styles.selectedButton : null,
+                                selectedAnswer == optionsRcvd[1] ? selectedButton : null,
                             ]}
                             onPress={() => handleAnswerSelected(optionsRcvd[1])}>
                             <Text style={styles.answerText}>{optionsRcvd[1]}</Text>
+                            {/* <Text style={styles.answerText}>Sparrow</Text> */}
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[
                                 styles.answerButton,
-                                selectedAnswer === 'C' ? styles.selectedButton : null,
+                                selectedAnswer == optionsRcvd[2] ? selectedButton : null,
                             ]}
                             onPress={() => handleAnswerSelected(optionsRcvd[2])}>
                             <Text style={styles.answerText}>{optionsRcvd[2]}</Text>
+                            {/* <Text style={styles.answerText}>Hen</Text> */}
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[
                                 styles.answerButton,
-                                selectedAnswer === 'D' ? styles.selectedButton : null,
+                                selectedAnswer == optionsRcvd[3] ? selectedButton : null,
                             ]}
                             onPress={() => handleAnswerSelected(optionsRcvd[3])}>
                             <Text style={styles.answerText}>{optionsRcvd[3]}</Text>
+                            {/* <Text style={styles.answerText}>Peacock</Text> */}
                         </TouchableOpacity>
 
                     </View>
@@ -269,25 +371,27 @@ const Agora = ({ joined }: AgoraProps) => {
                     <View style={styles.footer}>
                         <TouchableOpacity style={styles.footerButton}>
                             <Image
-                                source={require('../Assets/Images/footer1.png')}
+                                source={require('../Assets/Images/5050.png')}
+                                style={styles.footerButtonImg}
+                            />
+                        </TouchableOpacity>
+                        {/* <LinearGradient colors={['#f820ab', '#f6493']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} > */}
+                        <TouchableOpacity style={styles.footerButton}>
+                            <Image
+                                source={require('../Assets/Images/audiencePoll.png')}
+                                style={styles.footerButtonImg}
+                            />
+                        </TouchableOpacity >
+
+                        <TouchableOpacity style={styles.footerButton}>
+                            <Image
+                                source={require('../Assets/Images/bestOf2.png')}
                                 style={styles.footerButtonImg}
                             />
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.footerButton}>
                             <Image
-                                source={require('../Assets/Images/footer2.png')}
-                                style={styles.footerButtonImg}
-                            />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.footerButton}>
-                            <Image
-                                source={require('../Assets/Images/footer3.png')}
-                                style={styles.footerButtonImg}
-                            />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.footerButton}>
-                            <Image
-                                source={require('../Assets/Images/footer4.png')}
+                                source={require('../Assets/Images/heartLine.png')}
                                 style={styles.footerButtonImg}
                             />
                         </TouchableOpacity>
@@ -321,16 +425,11 @@ const Agora = ({ joined }: AgoraProps) => {
         );
     }
 
-
-
-
-
-
-
     // function showMessage(msg: string) {
     //     setMessage(msg);
     // }
     function setQuestionAndAns(data: any) {
+        console.log("Got the question: ", data[1]);
         setQuestion(data[1]);
         let tempArr = [];
         tempArr.push(data[2]);
@@ -338,10 +437,14 @@ const Agora = ({ joined }: AgoraProps) => {
         tempArr.push(data[4]);
         tempArr.push(data[5]);
         setOptions(tempArr);
-        setShowingQuestion(true);
+
         setRightAnswer(data[6]);
-        setStartTime(Date.now());
-        setAnsweredRight(false);
+
+        handleQuestionInitialisation();
+
+        // const timer = setInterval(() => {
+        //     setProgress(prevProgress => prevProgress + 1);
+        // }, 1000);
     }
 };
 
@@ -389,10 +492,10 @@ const styles = StyleSheet.create({
         resizeMode: 'contain',
     },
     quizContainer: {
-        flex: 2,
+        flex: 1.7,
         backgroundColor: 'rgba(80, 80, 80, 0.3)',
         paddingHorizontal: '10%',
-        paddingTop: '8%',
+        paddingTop: '20%',
         borderRadius: 30
     },
     questionContainer: {
@@ -418,9 +521,6 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         backgroundColor: 'rgba(200, 200, 200, 0.8)',
     },
-    selectedButton: {
-        backgroundColor: '#ccc',
-    },
     answerText: {
         fontSize: 18,
         justifyContent: 'center',
@@ -436,16 +536,40 @@ const styles = StyleSheet.create({
         // backgroundColor: 'black',
     },
     footerButton: {
-        paddingVertical: 0,
-        paddingHorizontal: 0,
-        borderWidth: 1,
-        borderRadius: 8,
-        borderColor: '#ccc',
-        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 50,
+        backgroundColor: '#f82d87',
     },
     footerButtonImg: {
-
+        backgroundColor: 'transparent',
+        width: 30,
+        height: 30,
+        resizeMode: 'contain'
     },
+    circleContainer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'flex-start',
+        transform: [{ translateY: -50 }],
+    },
+    circle: {
+        backgroundColor: 'white',
+        width: 100,
+        height: 100,
+        borderRadius: 40,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    circleText: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: 'black'
+    }
+
 });
 
 const getPermission = async () => {
