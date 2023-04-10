@@ -173,8 +173,6 @@ const Agora = ({ joined }: AgoraProps) => {
                 let fetchedRtmToken = await FetchRtmToken(uid);
                 await rtmEngineRef?.login({ uid: uid.toString(), token: fetchedRtmToken }).catch((e) => console.log(e));
                 await rtmEngineRef?.joinChannel('demoChannel').catch((e) => console.log(e));
-
-
             }
         } catch (e) {
             console.log(e);
@@ -183,7 +181,7 @@ const Agora = ({ joined }: AgoraProps) => {
 
     // Fetches the <Vg k="VSDK" /> token
     const FetchToken = async (): Promise<string> => {
-        const response = await fetch('https://virtuelly-meta.herokuapp.com/rte/test/publisher/uid/0/?expiry=3600');
+        const response = await fetch('https://virtuelly-meta.herokuapp.com/rte/'+channelName+'/publisher/uid/0/?expiry=3600');
         const data = await response.json();
         let token = data.rtcToken;
         return token;
@@ -199,6 +197,7 @@ const Agora = ({ joined }: AgoraProps) => {
 
     const setClientRole = async (role: any) => {
         try {
+            console.log("setClientRole", uid);
             if (role == 'host') {
                 await agoraEngineRef.current?.setClientRole(ClientRoleType.ClientRoleBroadcaster);
             } else {
@@ -481,12 +480,24 @@ const Agora = ({ joined }: AgoraProps) => {
                 <View style={styles.middle}>
                     <View style={styles.imageContainer}>
                         <View style={styles.scroll}>
-                            <React.Fragment key={remoteUid}>
-                                <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
-                            </React.Fragment>
+                            {inSpotlight ? (
+                                <React.Fragment >
+                                    <View style={{ flex: 1, flexDirection: 'column' }}>
+                                        <RtcSurfaceView canvas={{ uid: remoteUid }} style={{ flex: 1, }} />
+                                        <RtcSurfaceView canvas={{ uid: 0 }} style={{ flex: 1, }} />
+                                    </View>
+                                </React.Fragment>
+
+                            ) : (
+                                <React.Fragment key={remoteUid}>
+                                    <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
+                                </React.Fragment>
+                            )}
                         </View>
                     </View>
-                </View>
+                </View >
+
+
             );
         }
     }
@@ -522,6 +533,13 @@ const styles = StyleSheet.create({
         // width: '100%'
     },
     videoView: {
+        width: '100%',
+        aspectRatio: aspectRatio,
+        alignSelf: 'center',
+        justifyContent: 'center',
+        resizeMode: 'cover',
+    },
+    videoViewHalf: {
         width: '100%',
         aspectRatio: aspectRatio,
         alignSelf: 'center',
