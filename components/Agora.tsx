@@ -1,16 +1,17 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, View, Switch, TouchableOpacity, Image, Dimensions, TouchableWithoutFeedback } from 'react-native';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { ClientRoleType, createAgoraRtcEngine, IRtcEngine, RtcSurfaceView, ChannelProfileType } from 'react-native-agora';
 import RtmEngine from 'agora-react-native-rtm';
 import LinearGradient from 'react-native-linear-gradient';
 import ProgressCircle from './ProgressTimer';
+import Leaderboard from './Leaderboard';
 
 const { width, height } = Dimensions.get('window');
 const aspectRatio = width / height;
 
 const appId = '70e1a03bf90645718299160e0fb1b38e';
-const channelName = 'test18';
+const channelName = 'test';
 const token = "00670e1a03bf90645718299160e0fb1b38eIADEnbBHBYI81PYGAcFTHpX/gzzOGmbX+P08KQWr27fm/gx+f9gAAAAAIgCnEk8FkvApZAQAAQAirShkAgAirShkAwAirShkBAAirShk";
 const uid = parseInt(generateRandomNumber());
 
@@ -44,17 +45,21 @@ const Agora = ({ joined }: AgoraProps) => {
     const [questionScreenType, setQuestionScreenType] = useState(0);
     //0 MEANS,QUES RECIEVED, 1 MEANS RIGHT ANSWER, 2 MEANS WRONG ANSWER, 3 DIDNT ANSWERRED, 4 TIMES UP 
 
+    const [markAnswers, setMarkAnswers] = useState(false);
     const [startTime, setStartTime] = useState<number | null>(null);
     const [endTime, setEndTime] = useState<number | null>(null);
     const [timeDifference, setTimeDifference] = useState<number | null>(null);
-
+    const [showLeaderboard, setShowLeaderboard] = useState(false);
+    const [inSpotlight, setInSpotlight] = useState(false);
 
     const [progress, setProgressForStopWatch] = useState(0);
 
     const handleAnswerSelected = (answer: any) => {
-
+        console.log("progressForStopWatch", progress);
+        if (haveAnswered)
+            return;
         setSelectedAnswer(answer);
-    
+
         setHaveAnswered(true);
         setEndTime(Date.now());
         if (rightAnswer !== '' && rightAnswer === answer) {
@@ -65,12 +70,13 @@ const Agora = ({ joined }: AgoraProps) => {
         } else {
             setAnsweredRight(false);
         }
-        console.log("haveAnswered",haveAnswered);
-        console.log("answeredRight",answeredRight);
+        console.log("haveAnswered", haveAnswered);
+        console.log("answeredRight", answeredRight);
     };
-    
-    
+
+
     const startTimer = () => {
+        console.log("progressForStopWatch", progress);
         console.log("progress1 ", progress);
         setTimeout(incTimer, 1000);
     }
@@ -79,12 +85,8 @@ const Agora = ({ joined }: AgoraProps) => {
         setProgressForStopWatch(prevProgress => {
             const newProgress = prevProgress + 1;
 
-            console.log("answeredRight11",answeredRight);
-            console.log("haveAnswered11",haveAnswered);
             if (newProgress < 10) {
                 setTimeout(incTimer, 1000);
-            }else{
-                answerMarking();
             }
 
             return newProgress;
@@ -92,9 +94,10 @@ const Agora = ({ joined }: AgoraProps) => {
 
     }
 
-    function answerMarking() {
-        console.log("haveAnswered",haveAnswered);
-        console.log("answeredRight",answeredRight);
+    const answerMarking = useCallback(() => {
+        console.log("haveAnswered", haveAnswered);
+        console.log("answeredRight", answeredRight);
+        console.log("questionScreenType Now", questionScreenType);
         if (haveAnswered) {
             if (answeredRight) {
                 setQuestionScreenType(1);
@@ -109,30 +112,42 @@ const Agora = ({ joined }: AgoraProps) => {
             setQuestionScreenType(3);
             console.log("Answer check: Didnt Answered");
         }
-    }
+        // console.log("questionScreenType3", questionScreenType);
+    }, [haveAnswered, answeredRight, questionScreenType]);
+
+    useEffect(() => {
+        if (markAnswers) {
+            answerMarking();
+        }
+    }, [markAnswers, answerMarking]);
+
 
     function handleQuestionInitialisation() {
-        console.log("answeredRight22", answeredRight);
-        console.log("haveAnswered22",haveAnswered);
+        setSelectedAnswer('');
         setQuestionScreenType(0);
         setShowingQuestion(true);
         setStartTime(Date.now());
         setAnsweredRight(false);
         setHaveAnswered(false);
-        console.log("answeredRight", answeredRight);
-        console.log("haveAnswered",haveAnswered);
-    
+        setSelectedButton({ backgroundColor: '#f82d87', });
+        console.log("questionScreenType", questionScreenType);
+        console.log("progressForStopWatch", progress);
         setProgressForStopWatch(0);
         startTimer();
-    
-        // let answerMarkingInterval = setInterval(answerMarking, 13000);
-        // setTimeout(() => clearInterval(answerMarkingInterval), 20000);
-    
+
+        setTimeout(() => {
+            setQuestionScreenType(4);
+        }, 10000);
+
+        setTimeout(() => {
+            setMarkAnswers(true);
+        }, 15400);
+
         setTimeout(() => {
             setShowingQuestion(false);
-        }, 20000);
+        }, 25000);
     }
-    
+
     const join = async () => {
         if (isJoined) {
             return;
@@ -168,7 +183,7 @@ const Agora = ({ joined }: AgoraProps) => {
 
     // Fetches the <Vg k="VSDK" /> token
     const FetchToken = async (): Promise<string> => {
-        const response = await fetch('https://virtuelly-meta.herokuapp.com/rte/test18/publisher/uid/0/?expiry=3600');
+        const response = await fetch('https://virtuelly-meta.herokuapp.com/rte/test/publisher/uid/0/?expiry=3600');
         const data = await response.json();
         let token = data.rtcToken;
         return token;
@@ -181,6 +196,19 @@ const Agora = ({ joined }: AgoraProps) => {
         let token = data.rtmToken;
         return token;
     };
+
+    const setClientRole = async (role: any) => {
+        try {
+            if (role == 'host') {
+                await agoraEngineRef.current?.setClientRole(ClientRoleType.ClientRoleBroadcaster);
+            } else {
+                await agoraEngineRef.current?.setClientRole(ClientRoleType.ClientRoleAudience);
+            }
+            console.log(`Client role set to ${role}`);
+        } catch (error) {
+            console.log(`Error setting client role: ${error}`);
+        }
+    }
 
 
     const leave = async () => {
@@ -197,6 +225,9 @@ const Agora = ({ joined }: AgoraProps) => {
         }
     };
 
+    // useEffect(() => {
+    //     setupVideoSDKEngine();
+    // }, [remoteUid]);
     const setupVideoSDKEngine = async () => {
         try {
             // use the helper function to get permissions
@@ -210,11 +241,11 @@ const Agora = ({ joined }: AgoraProps) => {
                 },
                 onUserJoined: (_connection, Uid) => {
                     // showMessage('Remote user joined with uid ' + Uid);
-                    setRemoteUid(Uid);
+                    addPlayer(Uid);
                 },
                 onUserOffline: (_connection, Uid) => {
                     // showMessage('Remote user left the channel. uid: ' + Uid);
-                    setRemoteUid(0);
+                    removePlayer(Uid);
                 },
                 onRequestToken: async _connection => {
                     console.log('token expired');
@@ -232,6 +263,19 @@ const Agora = ({ joined }: AgoraProps) => {
         }
     };
 
+    const addPlayer = useCallback((Uid: any) => {
+        console.log("online", remoteUid, Uid);
+        if (remoteUid === 0) {
+            setRemoteUid(Uid);
+        }
+    }, [remoteUid]);
+    const removePlayer = useCallback((Uid: any) => {
+        console.log("offline", remoteUid, Uid);
+        if (remoteUid == Uid) {
+            setRemoteUid(0);
+        }
+    }, [remoteUid]);
+
     const initRTM = async () => {
 
         rtmEngineRef?.on('error', (evt) => {
@@ -241,11 +285,30 @@ const Agora = ({ joined }: AgoraProps) => {
         rtmEngineRef.on('channelMessageReceived', (evt) => {
             // received message is of the form - channel:membercount, add it to the state
             let { text } = evt;
-            let data = text.split('///');
-            // showMessage(text);
-            console.log("text :", text);
-            console.log("data :", data);
-            setQuestionAndAns(data);
+            if (text == "show-leaderBoard") {
+                console.log("text :", text);
+                setShowLeaderboard(true);
+            }
+            else if (text == "hide-leaderBoard") {
+                console.log("text :", text);
+                setShowLeaderboard(false);
+            }
+            else if (text == "bring-spotlight") {
+                console.log("text :", text);
+                setClientRole('host');
+                setInSpotlight(true);
+            }
+            else if (text == "hide-spotlight") {
+                console.log("text :", text);
+                setClientRole('audience');
+                setInSpotlight(false);
+            } else {
+                let data = text.split('///');
+                // showMessage(text);
+                console.log("text :", text);
+                console.log("data :", data);
+                setQuestionAndAns(data);
+            }
         });
 
         rtmEngineRef.on('messageReceived', (evt) => {
@@ -290,6 +353,11 @@ const Agora = ({ joined }: AgoraProps) => {
     // console.log("Right Answer: ", timeDifference);
 
     // }, [endTime, startTime]);
+    if (showLeaderboard) {
+        return (
+            <Leaderboard />
+        );
+    }
 
     if (!isJoined || isHost || remoteUid == 0) {
         return (
@@ -306,124 +374,123 @@ const Agora = ({ joined }: AgoraProps) => {
             }}>Game has not yet started.{"\n"} Wait for the fun to begin !</Text>
 
         );
-    }
-
-    if (showingQuestion) {
-        return (
-            <SafeAreaView style={styles.middle}>
-                <View style={styles.imageContainer}>
-                    <View style={styles.scroll}>
-                        <React.Fragment key={remoteUid}>
-                            <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
-                        </React.Fragment>
-                    </View>
-                </View>
-
-
-                <LinearGradient style={styles.quizContainer} colors={['rgba(20, 20, 20, 0.1)', 'rgba(20, 20, 20, 1)']} start={{ x: 0.5, y: 0.1 }}>
-                    <View style={styles.circleContainer}>
-                        <ProgressCircle progress={progress} />
-                    </View>
-                    <View style={styles.questionContainer}>
-                        <Text style={styles.questionText}>{questionRcvd}</Text>
-                        {/* <Text style={styles.questionText}>Which of the following is national bird of India</Text> */}
-                    </View>
-                    <View style={styles.answerContainer}>
-                        <TouchableOpacity
-                            style={[
-                                styles.answerButton,
-                                selectedAnswer == optionsRcvd[0] ? selectedButton : null,
-                            ]}
-                            onPress={() => handleAnswerSelected(optionsRcvd[0])}>
-                            <Text style={styles.answerText}>{optionsRcvd[0]}</Text>
-                            {/* <Text style={styles.answerText}>Parrot</Text> */}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.answerButton,
-                                selectedAnswer == optionsRcvd[1] ? selectedButton : null,
-                            ]}
-                            onPress={() => handleAnswerSelected(optionsRcvd[1])}>
-                            <Text style={styles.answerText}>{optionsRcvd[1]}</Text>
-                            {/* <Text style={styles.answerText}>Sparrow</Text> */}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.answerButton,
-                                selectedAnswer == optionsRcvd[2] ? selectedButton : null,
-                            ]}
-                            onPress={() => handleAnswerSelected(optionsRcvd[2])}>
-                            <Text style={styles.answerText}>{optionsRcvd[2]}</Text>
-                            {/* <Text style={styles.answerText}>Hen</Text> */}
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[
-                                styles.answerButton,
-                                selectedAnswer == optionsRcvd[3] ? selectedButton : null,
-                            ]}
-                            onPress={() => handleAnswerSelected(optionsRcvd[3])}>
-                            <Text style={styles.answerText}>{optionsRcvd[3]}</Text>
-                            {/* <Text style={styles.answerText}>Peacock</Text> */}
-                        </TouchableOpacity>
-
-                    </View>
-                    {/* Footer */}
-                    <View style={styles.footer}>
-                        <TouchableOpacity style={styles.footerButton}>
-                            <Image
-                                source={require('../Assets/Images/5050.png')}
-                                style={styles.footerButtonImg}
-                            />
-                        </TouchableOpacity>
-                        {/* <LinearGradient colors={['#f820ab', '#f6493']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} > */}
-                        <TouchableOpacity style={styles.footerButton}>
-                            <Image
-                                source={require('../Assets/Images/audiencePoll.png')}
-                                style={styles.footerButtonImg}
-                            />
-                        </TouchableOpacity >
-
-                        <TouchableOpacity style={styles.footerButton}>
-                            <Image
-                                source={require('../Assets/Images/bestOf2.png')}
-                                style={styles.footerButtonImg}
-                            />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.footerButton}>
-                            <Image
-                                source={require('../Assets/Images/heartLine.png')}
-                                style={styles.footerButtonImg}
-                            />
-                        </TouchableOpacity>
-                    </View>
-                </LinearGradient>
-            </SafeAreaView>
-        );
     } else {
-        return (
+        if (showingQuestion) {
+            return (
+                <SafeAreaView style={styles.middle}>
+                    <View style={styles.imageContainer}>
+                        <View style={styles.scroll}>
+                            <React.Fragment key={remoteUid}>
+                                <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
+                            </React.Fragment>
+                        </View>
+                    </View>
 
-            //             {isJoined && !isHost && remoteUid !== 0 ? (
-            //                 <React.Fragment key={remoteUid}>
-            //                     <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
-            //                     {/* <Text>Remote user uid: {remoteUid}</Text> */}
-            //                 </React.Fragment>
-            //             ) : (
-            //                 <Text>{isJoined && !isHost ? 'Waiting for a remote user to join' : ''}</Text>
-            //             )}
 
-            <View style={styles.middle}>
-                <View style={styles.imageContainer}>
-                    <View style={styles.scroll}>
-                        <React.Fragment key={remoteUid}>
-                            <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
-                        </React.Fragment>
+                    <LinearGradient style={styles.quizContainer} colors={['rgba(20, 20, 20, 0.1)', 'rgba(20, 20, 20, 1)']} start={{ x: 0.5, y: 0.1 }}>
+                        <View style={styles.circleContainer}>
+                            <ProgressCircle progress={progress} screen={questionScreenType} />
+                        </View>
+                        <View style={styles.questionContainer}>
+                            <Text style={styles.questionText}>{questionRcvd}</Text>
+                            {/* <Text style={styles.questionText}>Which of the following is national bird of India</Text> */}
+                        </View>
+                        <View style={styles.answerContainer}>
+                            <TouchableOpacity
+                                style={[
+                                    styles.answerButton,
+                                    selectedAnswer == optionsRcvd[0] ? selectedButton : null,
+                                ]}
+                                onPress={() => handleAnswerSelected(optionsRcvd[0])}>
+                                <Text style={styles.answerText}>{optionsRcvd[0]}</Text>
+                                {/* <Text style={styles.answerText}>Parrot</Text> */}
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.answerButton,
+                                    selectedAnswer == optionsRcvd[1] ? selectedButton : null,
+                                ]}
+                                onPress={() => handleAnswerSelected(optionsRcvd[1])}>
+                                <Text style={styles.answerText}>{optionsRcvd[1]}</Text>
+                                {/* <Text style={styles.answerText}>Sparrow</Text> */}
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.answerButton,
+                                    selectedAnswer == optionsRcvd[2] ? selectedButton : null,
+                                ]}
+                                onPress={() => handleAnswerSelected(optionsRcvd[2])}>
+                                <Text style={styles.answerText}>{optionsRcvd[2]}</Text>
+                                {/* <Text style={styles.answerText}>Hen</Text> */}
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[
+                                    styles.answerButton,
+                                    selectedAnswer == optionsRcvd[3] ? selectedButton : null,
+                                ]}
+                                onPress={() => handleAnswerSelected(optionsRcvd[3])}>
+                                <Text style={styles.answerText}>{optionsRcvd[3]}</Text>
+                                {/* <Text style={styles.answerText}>Peacock</Text> */}
+                            </TouchableOpacity>
+
+                        </View>
+                        {/* Footer */}
+                        <View style={styles.footer}>
+                            <TouchableOpacity style={styles.footerButton}>
+                                <Image
+                                    source={require('../Assets/Images/5050.png')}
+                                    style={styles.footerButtonImg}
+                                />
+                            </TouchableOpacity>
+                            {/* <LinearGradient colors={['#f820ab', '#f6493']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} > */}
+                            <TouchableOpacity style={styles.footerButton}>
+                                <Image
+                                    source={require('../Assets/Images/audiencePoll.png')}
+                                    style={styles.footerButtonImg}
+                                />
+                            </TouchableOpacity >
+
+                            <TouchableOpacity style={styles.footerButton}>
+                                <Image
+                                    source={require('../Assets/Images/bestOf2.png')}
+                                    style={styles.footerButtonImg}
+                                />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.footerButton}>
+                                <Image
+                                    source={require('../Assets/Images/heartLine.png')}
+                                    style={styles.footerButtonImg}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                    </LinearGradient>
+                </SafeAreaView>
+            );
+        } else {
+            return (
+
+                //             {isJoined && !isHost && remoteUid !== 0 ? (
+                //                 <React.Fragment key={remoteUid}>
+                //                     <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
+                //                     {/* <Text>Remote user uid: {remoteUid}</Text> */}
+                //                 </React.Fragment>
+                //             ) : (
+                //                 <Text>{isJoined && !isHost ? 'Waiting for a remote user to join' : ''}</Text>
+                //             )}
+
+                <View style={styles.middle}>
+                    <View style={styles.imageContainer}>
+                        <View style={styles.scroll}>
+                            <React.Fragment key={remoteUid}>
+                                <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
+                            </React.Fragment>
+                        </View>
                     </View>
                 </View>
-            </View>
-
-
-        );
+            );
+        }
     }
+
 
     // function showMessage(msg: string) {
     //     setMessage(msg);
