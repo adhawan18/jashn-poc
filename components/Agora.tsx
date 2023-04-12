@@ -1,17 +1,19 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, View, Switch, TouchableOpacity, Image, Dimensions, TouchableWithoutFeedback } from 'react-native';
+import { SafeAreaView, StyleSheet, Text, View, Switch, TouchableOpacity, Image, Dimensions, TouchableWithoutFeedback, TextInput, Keyboard } from 'react-native';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { ClientRoleType, createAgoraRtcEngine, IRtcEngine, RtcSurfaceView, ChannelProfileType } from 'react-native-agora';
 import RtmEngine from 'agora-react-native-rtm';
 import LinearGradient from 'react-native-linear-gradient';
 import ProgressCircle from './ProgressTimer';
 import Leaderboard from './Leaderboard';
+import { ScrollView } from 'react-native-gesture-handler';
 
 const { width, height } = Dimensions.get('window');
 const aspectRatio = width / height;
 
 const appId = '70e1a03bf90645718299160e0fb1b38e';
 const channelName = 'test';
+const rtmChannel = 'demoChannel';
 const token = "00670e1a03bf90645718299160e0fb1b38eIADEnbBHBYI81PYGAcFTHpX/gzzOGmbX+P08KQWr27fm/gx+f9gAAAAAIgCnEk8FkvApZAQAAQAirShkAgAirShkAwAirShkBAAirShk";
 const uid = parseInt(generateRandomNumber());
 
@@ -28,6 +30,7 @@ interface AgoraProps {
 }
 
 const Agora = ({ joined }: AgoraProps) => {
+    const [keyboardOpen, setKeyboardOpen] = useState(false);
     const agoraEngineRef = useRef<IRtcEngine>(); // Agora engine instance
     const rtmEngineRef = new RtmEngine();
     const [isJoined, setIsJoined] = useState(false); // Indicates if the local user has joined the channel
@@ -49,10 +52,139 @@ const Agora = ({ joined }: AgoraProps) => {
     const [startTime, setStartTime] = useState<number | null>(null);
     const [endTime, setEndTime] = useState<number | null>(null);
     const [timeDifference, setTimeDifference] = useState<number | null>(null);
+    const [progress, setProgressForStopWatch] = useState(0);
+
     const [showLeaderboard, setShowLeaderboard] = useState(false);
     const [inSpotlight, setInSpotlight] = useState(false);
 
-    const [progress, setProgressForStopWatch] = useState(0);
+    const [writingChat, setWritingChat] = useState(false);
+    const [chat, setChat] = useState('');
+    const [chatArr, setChatArr] = useState([
+        {
+            id: 0,
+            name: "Jashn",
+            avatar: "https://i.ibb.co/Zh34Cb3/jChAT.jpg",
+            msg: 'Get ready for the fun to begin!'
+        },
+
+    ]);
+    const [nextChatId, setNextChatId] = useState(1);
+
+
+    const scrollViewRef = useRef<ScrollView>(null);
+    const chatArrRef = useRef(chatArr);
+    const nextChatIdRef = useRef(nextChatId);
+
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+            setKeyboardOpen(true);
+        });
+
+        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+            setKeyboardOpen(false);
+        });
+
+        return () => {
+            keyboardDidShowListener.remove();
+            keyboardDidHideListener.remove();
+        };
+    }, []);
+
+
+    useEffect(() => {
+        chatArrRef.current = chatArr;
+    }, [chatArr]);
+
+    useEffect(() => {
+        nextChatIdRef.current = nextChatId;
+    }, [nextChatId]);
+
+
+    const handleChatPress = () => {
+        pushChatArr(["Jeet", "https://i.ibb.co/MNfm0vK/jeet-Avtar.jpg", chat]);
+        setChat('');
+        setWritingChat(false);
+        let tempStr = "chat///Jeet///https://i.ibb.co/MNfm0vK/jeet-Avtar.jpg///" + chat;
+        rtmEngineRef.sendMessageByChannelId(rtmChannel, tempStr)
+            .then(() => {
+                console.log('Message sent successfully');
+            })
+            .catch(error => {
+                console.log('Error sending message: ', error);
+            });
+
+    };
+    const pushChatArr = (data: any) => {
+        let tempMsgEle = {
+            id: nextChatIdRef.current,
+            name: data[0],
+            avatar: data[1],
+            msg: data[2]
+        };
+        setChatArr((prevState) => {
+            let updatedState = [...prevState, tempMsgEle];
+            if (updatedState.length >= 25) {
+                updatedState.shift();
+            }
+            return updatedState;
+        });
+        setNextChatId(prevState => prevState + 1);
+        if (scrollViewRef.current) {
+            scrollViewRef.current.scrollToEnd({ animated: true });
+        }
+    };
+
+
+    const handleChannelMessageReceived = useCallback((evt: any, pushChatArrFunc: any) => {
+        // received message is of the form - channel:membercount, add it to the state
+        let { text } = evt;
+        if (text == "show-leaderBoard") {
+            console.log("text :", text);
+            setShowLeaderboard(true);
+        }
+        else if (text == "hide-leaderBoard") {
+            console.log("text :", text);
+            setShowLeaderboard(false);
+        }
+        else if (text == "bring-spotlight") {
+            console.log("text :", text);
+            setClientRole('host');
+            setInSpotlight(true);
+        }
+        else if (text == "hide-spotlight") {
+            console.log("text :", text);
+            setClientRole('audience');
+            setInSpotlight(false);
+        } else {
+            let data = text.split('///');
+            // showMessage(text);
+            console.log("text :", text);
+            console.log("data :", data);
+            if (data[0] == 'question') {
+                data.shift();
+                // console.log("data :", data);
+                setQuestionAndAns(data);
+            } else if (data[0] == 'chat') {
+                data.shift();
+                pushChatArrFunc(data);
+            }
+            else {
+                // console.log("text :", text);
+                console.log("Unknown message send");
+            }
+        }
+    }, []);
+
+
+
+    const openChatScreen = () => {
+        setWritingChat(true);
+    }
+    const clsoeChatScreen = () => {
+        setWritingChat(false);
+        setChat('');
+    }
+
 
     const handleAnswerSelected = (answer: any) => {
         console.log("progressForStopWatch", progress);
@@ -172,7 +304,7 @@ const Agora = ({ joined }: AgoraProps) => {
                 await rtmEngineRef.createClient(appId).catch((e) => console.log(e));
                 let fetchedRtmToken = await FetchRtmToken(uid);
                 await rtmEngineRef?.login({ uid: uid.toString(), token: fetchedRtmToken }).catch((e) => console.log(e));
-                await rtmEngineRef?.joinChannel('demoChannel').catch((e) => console.log(e));
+                await rtmEngineRef?.joinChannel(rtmChannel).catch((e) => console.log(e));
             }
         } catch (e) {
             console.log(e);
@@ -181,7 +313,7 @@ const Agora = ({ joined }: AgoraProps) => {
 
     // Fetches the <Vg k="VSDK" /> token
     const FetchToken = async (): Promise<string> => {
-        const response = await fetch('https://virtuelly-meta.herokuapp.com/rte/'+channelName+'/publisher/uid/0/?expiry=3600');
+        const response = await fetch('https://virtuelly-meta.herokuapp.com/rte/' + channelName + '/publisher/uid/0/?expiry=3600');
         const data = await response.json();
         let token = data.rtcToken;
         return token;
@@ -275,39 +407,14 @@ const Agora = ({ joined }: AgoraProps) => {
         }
     }, [remoteUid]);
 
-    const initRTM = async () => {
+    const initRTM = useCallback(async () => {
 
         rtmEngineRef?.on('error', (evt) => {
             console.log(evt);
         });
 
         rtmEngineRef.on('channelMessageReceived', (evt) => {
-            // received message is of the form - channel:membercount, add it to the state
-            let { text } = evt;
-            if (text == "show-leaderBoard") {
-                console.log("text :", text);
-                setShowLeaderboard(true);
-            }
-            else if (text == "hide-leaderBoard") {
-                console.log("text :", text);
-                setShowLeaderboard(false);
-            }
-            else if (text == "bring-spotlight") {
-                console.log("text :", text);
-                setClientRole('host');
-                setInSpotlight(true);
-            }
-            else if (text == "hide-spotlight") {
-                console.log("text :", text);
-                setClientRole('audience');
-                setInSpotlight(false);
-            } else {
-                let data = text.split('///');
-                // showMessage(text);
-                console.log("text :", text);
-                console.log("data :", data);
-                setQuestionAndAns(data);
-            }
+            handleChannelMessageReceived(evt, pushChatArr);
         });
 
         rtmEngineRef.on('messageReceived', (evt) => {
@@ -320,7 +427,7 @@ const Agora = ({ joined }: AgoraProps) => {
             setQuestionAndAns(data);
         });
 
-    };
+    }, []);
 
     useEffect(() => {
         // Initialize Agora engine when the app starts
@@ -495,6 +602,138 @@ const Agora = ({ joined }: AgoraProps) => {
                             )}
                         </View>
                     </View>
+
+                    <LinearGradient style={styles.chatContainer} colors={['rgba(64, 45, 116, 0.1)', 'rgba(248,46,132, 0.2)']} start={{ x: 0.5, y: 0.5 }}>
+                        <View style={{ flex: 1, position: 'relative' }}>
+                            <ScrollView ref={scrollViewRef} style={{ flex: 1, paddingHorizontal: 10 }}>
+                                {chatArr.map((chat) => (
+                                    <View style={styles.chatMsgBox} key={chat.id}>
+                                        <Image
+                                            source={{ uri: chat.avatar }}
+                                            style={styles.chatMsgAvtar}
+                                        />
+                                        <Text style={styles.chatMsgUserName}>{chat.name}</Text>
+                                        <Text style={styles.chatMsgChat}>{chat.msg}</Text>
+                                    </View>
+                                ))}
+                            </ScrollView>
+                            <LinearGradient
+                                colors={['rgba(100, 100, 100, 0.5)', 'rgba(100, 100, 100, 0)']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 0, y: 1 }}
+                                style={{
+                                    position: 'absolute',
+                                    left: 0,
+                                    right: 0,
+                                    top: 0,
+                                    height: 50, // Adjust the height of the fading effect
+                                }}
+                            />
+                        </View>
+
+                        {/* Button */}
+                        {writingChat ? (
+                            <View style={{ flex: 0.35, flexDirection: 'row' }}>
+                                <TextInput
+                                    style={{ flex: 1, padding: 10, backgroundColor: '#f2f2f2', borderRadius: 30, marginHorizontal: 10, marginVertical: 5 }}
+                                    value={chat}
+                                    onChangeText={setChat}
+                                />
+                                <TouchableOpacity onPress={handleChatPress} style={{
+                                    position: 'absolute',
+                                    right: '10%',
+                                    top: '50%',
+                                    transform: [{ translateY: -15 }]
+                                }} >
+                                    <Image
+                                        source={require('../Assets/Images/sendBtn.png')}
+                                        style={{
+                                            backgroundColor: 'transparent',
+                                            width: 30,
+                                            height: 30,
+                                            resizeMode: 'contain',
+                                        }}
+                                    />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={{
+                                    position: 'absolute',
+                                    right: '8%',
+                                    bottom: '110%',
+                                    backgroundColor: 'rgba(255,255,255,0.1)',
+                                    borderRadius: 50,
+                                    padding: 10
+                                }} >
+                                    <Image
+                                        source={require('../Assets/Images/dotsWhite.png')}
+                                        style={{
+                                            backgroundColor: 'transparent',
+                                            width: 20,
+                                            height: 20,
+                                            resizeMode: 'contain',
+                                        }}
+                                    />
+                                </TouchableOpacity>
+                                <TouchableOpacity style={{
+                                    position: 'absolute',
+                                    right: '8%',
+                                    bottom: '170%',
+                                    backgroundColor: 'rgba(255,255,255,0.1)',
+                                    borderRadius: 50,
+                                    padding: 10
+                                }}>
+                                    <Image
+                                        source={require('../Assets/Images/heartWhite.png')}
+                                        style={{
+                                            backgroundColor: 'transparent',
+                                            width: 20,
+                                            height: 20,
+                                            resizeMode: 'contain',
+                                        }}
+                                    />
+                                </TouchableOpacity>
+
+                                <TouchableOpacity style={{
+                                    position: 'absolute',
+                                    right: '8%',
+                                    bottom: '230%',
+                                    backgroundColor: '#f82d87',
+                                    borderRadius: 50,
+                                    padding: 10
+                                }} onPress={() => clsoeChatScreen()}>
+                                    <Image
+                                        source={require('../Assets/Images/crossWhite.png')}
+                                        style={{
+                                            backgroundColor: 'transparent',
+                                            width: 20,
+                                            height: 20,
+                                            resizeMode: 'contain',
+                                        }}
+                                    />
+                                </TouchableOpacity>
+
+                            </View>
+
+                        ) : (
+                            <TouchableOpacity style={{
+                                position: 'absolute',
+                                right: '10%',
+                                bottom: '10%'
+                            }} onPress={() => openChatScreen()}>
+                                <Image
+                                    source={require('../Assets/Images/chatIcon.png')}
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        width: 50,
+                                        height: 50,
+                                        resizeMode: 'contain',
+                                    }}
+                                />
+                            </TouchableOpacity>
+
+                        )}
+                    </LinearGradient>
+
                 </View >
 
 
@@ -575,6 +814,38 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         resizeMode: 'contain',
+    },
+    chatContainer: {
+        flex: 0.6,
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        flexDirection: 'column',
+        justifyContent: 'space-around',
+        paddingBottom: 20,
+    },
+    chatMsgBox: {
+        marginVertical: 10,
+        flexDirection: 'row',
+    },
+    chatMsgUserName: {
+        fontSize: 15,
+        justifyContent: 'center',
+        alignSelf: 'center',
+        color: 'rgb(180,180,180)',
+        marginHorizontal: 5,
+    },
+    chatMsgAvtar: {
+        width: 40,
+        height: 40,
+        borderRadius: 25,
+        marginHorizontal: 5,
+    },
+    chatMsgChat: {
+        fontSize: 15,
+        justifyContent: 'center',
+        alignSelf: 'center',
+        color: 'white',
+        fontWeight: 'bold'
     },
     quizContainer: {
         flex: 1.7,

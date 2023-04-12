@@ -1,5 +1,5 @@
 import React, { ReactNode, useState } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Image, TouchableOpacity, ImageBackground } from 'react-native';
 import GradientMask from "./components/Gradients";
 import Agora from "./components/Agora";
 import PhoneNumber from "./components/noVerification";
@@ -26,7 +26,7 @@ const App = () => {
   };
   if (!showMainScreen && !otpSent) {
     return (
-      <LinearGradient style={styles.container} colors={['#402d74', '#f82e84']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} >
+      <ImageBackground style={styles.container} source={require('./Assets/Images/OvalTransparent.png')} >
         <View style={styles.logoContainer}>
           <Image
             source={require('./Assets/Images/jashnLogoWBG.png')}
@@ -42,13 +42,13 @@ const App = () => {
         >
           <Text style={styles.joinButtonText}>Join</Text>
         </TouchableOpacity>
-      </LinearGradient>
+      </ImageBackground>
       // <Leaderboard />
     );
   }
   if (!showMainScreen && otpSent) {
     return (
-      <LinearGradient style={styles.container} colors={['#402d74', '#f82e84']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} >
+      <ImageBackground style={styles.container} source={require('./Assets/Images/OvalTransparent.png')} >
         <View style={styles.logoContainer}>
           <Image
             source={require('./Assets/Images/jashnLogoWBG.png')}
@@ -64,11 +64,11 @@ const App = () => {
         >
           <Text style={styles.joinButtonText}>Verify</Text>
         </TouchableOpacity>
-      </LinearGradient>
+      </ImageBackground>
     );
   }
   return (
-    <LinearGradient style={styles.container} colors={['#402d74', '#f82e84']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} >
+    <ImageBackground style={styles.container} source={require('./Assets/Images/OvalTransparent.png')} >
       {/* Header */}
       <View style={styles.header}>
         <Image
@@ -92,7 +92,7 @@ const App = () => {
       <Agora joined={showMainScreen} />
       {/* </Text> */}
 
-    </LinearGradient>
+    </ImageBackground>
   );
 }
 
@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'column',
+    backgroundColor: '#2733E7'
   },
   logoContainer: {
     alignItems: 'center',
