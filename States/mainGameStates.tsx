@@ -7,6 +7,9 @@ export const SET_SHOWING_QUESTION = 'SET_SHOWING_QUESTION';
 export const SET_RIGHT_ANSWER = 'SET_RIGHT_ANSWER';
 export const SET_ANSWERED_RIGHT = 'SET_ANSWERED_RIGHT';
 export const SET_HAVE_ANSWERED = 'SET_HAVE_ANSWERED';
+export const SET_CURRENT_SCORE = 'SET_CURRENT_SCORE';
+export const SET_CORRECT_IN_A_ROW = 'SET_CORRECT_IN_A_ROW';
+export const SET_WRONG_IN_A_ROW = 'SET_WRONG_IN_A_ROW';
 export const SET_SELECTED_BUTTON = 'SET_SELECTED_BUTTON';
 export const SET_QUESTION_SCREEN_TYPE = 'SET_QUESTION_SCREEN_TYPE';
 export const SET_MARK_ANSWERS = 'SET_MARK_ANSWERS';
@@ -29,6 +32,9 @@ export type StateType = {
     rightAnswer: string;
     answeredRight: boolean;
     haveAnswered: boolean;
+    currentScore: number;
+    correctInARow: number;
+    wrongInARow: number;
     selectedButton: {
         backgroundColor: string;
     };
@@ -60,6 +66,9 @@ const initialState: StateType = {
     rightAnswer: '',
     answeredRight: false,
     haveAnswered: false,
+    currentScore: 0,
+    correctInARow: 0,
+    wrongInARow: 0,
     selectedButton: { backgroundColor: '#f82d87' },
     questionScreenType: 0,
     markAnswers: false,
@@ -99,10 +108,16 @@ const gameReducer = (state = initialState, action: { type: any; payload: any; })
             return { ...state, answeredRight: action.payload };
         case SET_HAVE_ANSWERED:
             return { ...state, haveAnswered: action.payload };
+        case SET_CURRENT_SCORE:
+            return { ...state, currentScore: action.payload };
+        case SET_CORRECT_IN_A_ROW:
+            return { ...state, correctInARow: action.payload };
+        case SET_WRONG_IN_A_ROW:
+            return { ...state, wrongInARow: action.payload };
         case SET_SELECTED_BUTTON:
             return { ...state, selectedButton: action.payload };
         case SET_QUESTION_SCREEN_TYPE: {
-            console.log("questionScreenType63",  action.payload);
+            console.log("questionScreenType63", action.payload);
             return { ...state, questionScreenType: action.payload };
         }
         case SET_MARK_ANSWERS:

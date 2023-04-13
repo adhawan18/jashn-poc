@@ -40,10 +40,26 @@ export const setHaveAnswered = (haveAnswered: boolean) => ({
   payload: haveAnswered,
 });
 
+export const setCurrentScore = (currentScore: number) => ({
+  type: 'SET_CURRENT_SCORE',
+  payload: currentScore,
+});
+
+export const setCorrectInARow = (correctInARow: number) => ({
+  type: 'SET_CORRECT_IN_A_ROW',
+  payload: correctInARow,
+});
+
+export const setWrongInARow = (wrongInARow: number) => ({
+  type: 'SET_WRONG_IN_A_ROW',
+  payload: wrongInARow,
+});
+
 export const setSelectedButton = (selectedButton: {}) => ({
   type: 'SET_SELECTED_BUTTON',
   payload: selectedButton,
 });
+
 
 export const setQuestionScreenType = (questionScreenType: number) => ({
   type: 'SET_QUESTION_SCREEN_TYPE',

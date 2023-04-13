@@ -20,6 +20,9 @@ import {
     setRightAnswer,
     setAnsweredRight,
     setHaveAnswered,
+    setCurrentScore,
+    setCorrectInARow,
+    setWrongInARow,
     setSelectedButton,
     setQuestionScreenType,
     setMarkAnswers,
@@ -81,6 +84,9 @@ const Agora = ({ joined }: AgoraProps) => {
     const selectedButton = useSelector((state: RootState) => state.mainGameReducer.selectedButton);
     const questionScreenType = useSelector((state: RootState) => state.mainGameReducer.questionScreenType);
     const markAnswers = useSelector((state: RootState) => state.mainGameReducer.markAnswers);
+    const currentScore = useSelector((state: RootState) => state.mainGameReducer.currentScore);
+    const correctInARow = useSelector((state: RootState) => state.mainGameReducer.correctInARow);
+    const wrongInARow = useSelector((state: RootState) => state.mainGameReducer.wrongInARow);
     const startTime = useSelector((state: RootState) => state.mainGameReducer.startTime);
     const endTime = useSelector((state: RootState) => state.mainGameReducer.endTime);
     const timeDifference = useSelector((state: RootState) => state.mainGameReducer.timeDifference);
@@ -209,28 +215,48 @@ const Agora = ({ joined }: AgoraProps) => {
         setChatInput('');
     }
 
+    useEffect(() => {
+        if (timeDifference) {
+            console.log("timeDifference", timeDifference, endTime, startTime);
+            dispatch(setCurrentScore(currentScore + (10000 - timeDifference) / 100));
+        }
+    }, [timeDifference]);
+
+    useEffect(() => {
+        // console.log("progressForStopWatch", progress);
+        if (haveAnswered) {
+            if (rightAnswer !== '' && rightAnswer === selectedAnswer) {
+                dispatch(setAnsweredRight(true));
+                if (startTime && endTime) {
+                    dispatch(setTimeDifference(endTime - startTime));
+                    dispatch(setCorrectInARow(correctInARow + 1));
+                    dispatch(setWrongInARow(0));
+                    if (correctInARow == 5) {
+                        dispatch(setCurrentScore(currentScore + 10));
+                        dispatch(setCorrectInARow(0));
+                    }
+
+                }
+            } else {
+                dispatch(setAnsweredRight(false));
+                dispatch(setWrongInARow(wrongInARow + 1));
+                dispatch(setCorrectInARow(0));
+                if (wrongInARow == 5) {
+                    dispatch(setCurrentScore(currentScore - 10));
+                    dispatch(setWrongInARow(0));
+                }
+            }
+            // console.log("haveAnswered", haveAnswered);
+            // console.log("answeredRight", answeredRight);
+            // console.log("score", currentScore);
+        }
+    }, [haveAnswered]);
 
     const handleAnswerSelected = (answer: any) => {
-        console.log("progressForStopWatch1", progress);
-        console.log("questionScreenType3", questionScreenType);
-        if (haveAnswered)
-            return;
         dispatch(setSelectedAnswer(answer));
-
         dispatch(setHaveAnswered(true));
         dispatch(setEndTime(Date.now()));
-        if (rightAnswer !== '' && rightAnswer === answer) {
-            dispatch(setAnsweredRight(true));
-            if (startTime && endTime) {
-                dispatch(setTimeDifference(endTime - startTime));
-            }
-        } else {
-            dispatch(setAnsweredRight(false));
-        }
-        console.log("haveAnswered", haveAnswered);
-        console.log("answeredRight", answeredRight);
     };
-
 
     const startTimer = () => {
         console.log("questionScreenType4", questionScreenType);
@@ -508,6 +534,7 @@ const Agora = ({ joined }: AgoraProps) => {
         if (showingQuestion) {
             return (
                 <QuizScreen
+                    currentScore={currentScore}
                     progress={progress}
                     questionScreenType={questionScreenType}
                     questionRcvd={questionRcvd}

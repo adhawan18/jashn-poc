@@ -8,17 +8,19 @@ const { width, height } = Dimensions.get('window');
 const aspectRatio = width / height;
 
 interface QuizScreenProps {
+    currentScore: number,
     progress: any,
     questionScreenType: any,
     questionRcvd: any,
     optionsRcvd: any,
     selectedAnswer: any,
     handleAnswerSelected: any,
-    remoteUid :any,
-    selectedButton:any,
+    remoteUid: any,
+    selectedButton: any,
 }
 
 const QuizScreen = ({
+    currentScore,
     progress,
     questionScreenType,
     questionRcvd,
@@ -29,6 +31,10 @@ const QuizScreen = ({
     selectedButton,
 }: QuizScreenProps) => (
     <SafeAreaView style={styles.middle}>
+        <View style={styles.score}>
+            <Text >score : {currentScore}</Text>
+            {/* <Text style={styles.questionText}>Which of the following is national bird of India</Text> */}
+        </View>
         <View style={styles.imageContainer}>
             <View style={styles.scroll}>
                 <React.Fragment key={remoteUid}>
@@ -119,6 +125,11 @@ const QuizScreen = ({
 );
 
 const styles = StyleSheet.create({
+    score: {
+        backgroundColor: '#00ff00',
+        paddingHorizontal: 8,
+        color: '#0000ff'
+    },
     scroll: {
         flex: 1,
         backgroundColor: 'lightgreen',
