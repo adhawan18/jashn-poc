@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@reduxjs/toolkit": "^1.9.3",
     "agora-react-native-rtm": "^1.5.1",
     "agora-rn-uikit": "^5.0.1",
     "agora-rtm-sdk": "^1.6.0-205",
@@ -20,7 +21,9 @@
     "react-native-gesture-handler": "^2.9.0",
     "react-native-linear-gradient": "^2.6.2",
     "react-native-svg": "^13.9.0",
-    "react-native-vector-icons": "^9.2.0"
+    "react-native-vector-icons": "^9.2.0",
+    "react-redux": "^8.0.5",
+    "redux": "^4.2.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

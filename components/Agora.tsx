@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, Dispatch } from 'react';
 import { SafeAreaView, StyleSheet, Text, View, Switch, TouchableOpacity, Image, Dimensions, TouchableWithoutFeedback, TextInput, Keyboard } from 'react-native';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { ClientRoleType, createAgoraRtcEngine, IRtcEngine, RtcSurfaceView, ChannelProfileType } from 'react-native-agora';
@@ -7,14 +7,46 @@ import LinearGradient from 'react-native-linear-gradient';
 import ProgressCircle from './ProgressTimer';
 import Leaderboard from './Leaderboard';
 import { ScrollView } from 'react-native-gesture-handler';
+import WaitingText from './WaitingScreen';
+import QuizScreen from './QuizScreen';
+import { RootState } from '../States/types';
+// reducers/gameReducer.ts
+import {
+    setIsJoined,
+    setQuestionRcvd,
+    setSelectedAnswer,
+    setOptionsRcvd,
+    setShowingQuestion,
+    setRightAnswer,
+    setAnsweredRight,
+    setHaveAnswered,
+    setSelectedButton,
+    setQuestionScreenType,
+    setMarkAnswers,
+    setStartTime,
+    setEndTime,
+    setTimeDifference,
+    setProgress,
+    setShowLeaderboard,
+    setInSpotlight,
+    setWritingChat,
+    setChatArr,
+    incrementProgress,
+    incrementChatId,
+    updateChatArr
+
+} from '../Actions/gameActions';
+import { setIsHost, setRemoteUid } from '../Actions/agoraActions';
+import { useDispatch, useSelector } from 'react-redux';
+import { AnyAction } from 'redux';
+
 
 const { width, height } = Dimensions.get('window');
 const aspectRatio = width / height;
 
 const appId = '70e1a03bf90645718299160e0fb1b38e';
-const channelName = 'test';
-const rtmChannel = 'demoChannel';
-const token = "00670e1a03bf90645718299160e0fb1b38eIADEnbBHBYI81PYGAcFTHpX/gzzOGmbX+P08KQWr27fm/gx+f9gAAAAAIgCnEk8FkvApZAQAAQAirShkAgAirShkAwAirShkBAAirShk";
+const channelName = 'test9';
+const rtmChannel = 'demoChannel9';
 const uid = parseInt(generateRandomNumber());
 
 function generateRandomNumber(): string {
@@ -33,47 +65,39 @@ const Agora = ({ joined }: AgoraProps) => {
     const [keyboardOpen, setKeyboardOpen] = useState(false);
     const agoraEngineRef = useRef<IRtcEngine>(); // Agora engine instance
     const rtmEngineRef = new RtmEngine();
-    const [isJoined, setIsJoined] = useState(false); // Indicates if the local user has joined the channel
-    const [isHost, setIsHost] = useState(false); // Client role
-    const [remoteUid, setRemoteUid] = useState(0); // Uid of the remote user
+    const dispatch = useDispatch();
 
-    const [questionRcvd, setQuestion] = useState('');
-    const [selectedAnswer, setSelectedAnswer] = useState('');
-    const [optionsRcvd, setOptions] = useState<string[]>([]);
-    const [showingQuestion, setShowingQuestion] = useState(false);
-    const [rightAnswer, setRightAnswer] = useState('');
-    const [answeredRight, setAnsweredRight] = useState(false);
-    const [haveAnswered, setHaveAnswered] = useState(false);
-    const [selectedButton, setSelectedButton] = useState({ backgroundColor: '#f82d87', });
-    const [questionScreenType, setQuestionScreenType] = useState(0);
-    //0 MEANS,QUES RECIEVED, 1 MEANS RIGHT ANSWER, 2 MEANS WRONG ANSWER, 3 DIDNT ANSWERRED, 4 TIMES UP 
+    const isHost = useSelector((state: RootState) => state.agoraReducer.isHost);
+    const remoteUid = useSelector((state: RootState) => state.agoraReducer.remoteUid);
 
-    const [markAnswers, setMarkAnswers] = useState(false);
-    const [startTime, setStartTime] = useState<number | null>(null);
-    const [endTime, setEndTime] = useState<number | null>(null);
-    const [timeDifference, setTimeDifference] = useState<number | null>(null);
-    const [progress, setProgressForStopWatch] = useState(0);
+    const isJoined = useSelector((state: RootState) => state.mainGameReducer.isJoined);
+    const questionRcvd = useSelector((state: RootState) => state.mainGameReducer.questionRcvd);
+    const selectedAnswer = useSelector((state: RootState) => state.mainGameReducer.selectedAnswer);
+    const optionsRcvd = useSelector((state: RootState) => state.mainGameReducer.optionsRcvd);
+    const showingQuestion = useSelector((state: RootState) => state.mainGameReducer.showingQuestion);
+    const rightAnswer = useSelector((state: RootState) => state.mainGameReducer.rightAnswer);
+    const answeredRight = useSelector((state: RootState) => state.mainGameReducer.answeredRight);
+    const haveAnswered = useSelector((state: RootState) => state.mainGameReducer.haveAnswered);
+    const selectedButton = useSelector((state: RootState) => state.mainGameReducer.selectedButton);
+    const questionScreenType = useSelector((state: RootState) => state.mainGameReducer.questionScreenType);
+    const markAnswers = useSelector((state: RootState) => state.mainGameReducer.markAnswers);
+    const startTime = useSelector((state: RootState) => state.mainGameReducer.startTime);
+    const endTime = useSelector((state: RootState) => state.mainGameReducer.endTime);
+    const timeDifference = useSelector((state: RootState) => state.mainGameReducer.timeDifference);
+    const progress = useSelector((state: RootState) => state.mainGameReducer.progress);
+    const showLeaderboard = useSelector((state: RootState) => state.mainGameReducer.showLeaderboard);
+    const inSpotlight = useSelector((state: RootState) => state.mainGameReducer.inSpotlight);
+    const writingChat = useSelector((state: RootState) => state.mainGameReducer.writingChat);
 
-    const [showLeaderboard, setShowLeaderboard] = useState(false);
-    const [inSpotlight, setInSpotlight] = useState(false);
+    const chatArr = useSelector((state: RootState) => state.mainGameReducer.chatArr);
+    const nextChatId = useSelector((state: RootState) => state.mainGameReducer.nextChatId);
 
-    const [writingChat, setWritingChat] = useState(false);
-    const [chat, setChat] = useState('');
-    const [chatArr, setChatArr] = useState([
-        {
-            id: 0,
-            name: "Jashn",
-            avatar: "https://i.ibb.co/Zh34Cb3/jChAT.jpg",
-            msg: 'Get ready for the fun to begin!'
-        },
-
-    ]);
-    const [nextChatId, setNextChatId] = useState(1);
-
+    const [chatInput, setChatInput] = useState('');
 
     const scrollViewRef = useRef<ScrollView>(null);
     const chatArrRef = useRef(chatArr);
     const nextChatIdRef = useRef(nextChatId);
+    const questionScreenTypeRef = useRef(questionScreenType);
 
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
@@ -99,12 +123,18 @@ const Agora = ({ joined }: AgoraProps) => {
         nextChatIdRef.current = nextChatId;
     }, [nextChatId]);
 
+    useEffect(() => {
+        questionScreenTypeRef.current = questionScreenType;
+    }, [questionScreenType]);
+
+
+
 
     const handleChatPress = () => {
-        pushChatArr(["Jeet", "https://i.ibb.co/MNfm0vK/jeet-Avtar.jpg", chat]);
-        setChat('');
-        setWritingChat(false);
-        let tempStr = "chat///Jeet///https://i.ibb.co/MNfm0vK/jeet-Avtar.jpg///" + chat;
+        pushChatArr(["Jeet", "https://i.ibb.co/MNfm0vK/jeet-Avtar.jpg", chatInput]);
+        setChatInput('');
+        dispatch(setWritingChat(false));
+        let tempStr = "chat///Jeet///https://i.ibb.co/MNfm0vK/jeet-Avtar.jpg///" + chatInput;
         rtmEngineRef.sendMessageByChannelId(rtmChannel, tempStr)
             .then(() => {
                 console.log('Message sent successfully');
@@ -121,40 +151,34 @@ const Agora = ({ joined }: AgoraProps) => {
             avatar: data[1],
             msg: data[2]
         };
-        setChatArr((prevState) => {
-            let updatedState = [...prevState, tempMsgEle];
-            if (updatedState.length >= 25) {
-                updatedState.shift();
-            }
-            return updatedState;
-        });
-        setNextChatId(prevState => prevState + 1);
+        dispatch(updateChatArr(tempMsgEle));
+        dispatch(incrementChatId());
         if (scrollViewRef.current) {
             scrollViewRef.current.scrollToEnd({ animated: true });
         }
     };
 
 
-    const handleChannelMessageReceived = useCallback((evt: any, pushChatArrFunc: any) => {
+    const handleChannelMessageReceived = useCallback((evt: any, pushChatArrFunc: any, setQuestionAndAnsFunc: any) => {
         // received message is of the form - channel:membercount, add it to the state
         let { text } = evt;
         if (text == "show-leaderBoard") {
             console.log("text :", text);
-            setShowLeaderboard(true);
+            dispatch(setShowLeaderboard(true));
         }
         else if (text == "hide-leaderBoard") {
             console.log("text :", text);
-            setShowLeaderboard(false);
+            dispatch(setShowLeaderboard(false));
         }
         else if (text == "bring-spotlight") {
             console.log("text :", text);
             setClientRole('host');
-            setInSpotlight(true);
+            dispatch(setInSpotlight(true));
         }
         else if (text == "hide-spotlight") {
             console.log("text :", text);
             setClientRole('audience');
-            setInSpotlight(false);
+            dispatch(setInSpotlight(false));
         } else {
             let data = text.split('///');
             // showMessage(text);
@@ -163,7 +187,7 @@ const Agora = ({ joined }: AgoraProps) => {
             if (data[0] == 'question') {
                 data.shift();
                 // console.log("data :", data);
-                setQuestionAndAns(data);
+                setQuestionAndAnsFunc(data);
             } else if (data[0] == 'chat') {
                 data.shift();
                 pushChatArrFunc(data);
@@ -178,29 +202,30 @@ const Agora = ({ joined }: AgoraProps) => {
 
 
     const openChatScreen = () => {
-        setWritingChat(true);
+        dispatch(setWritingChat(true));
     }
     const clsoeChatScreen = () => {
-        setWritingChat(false);
-        setChat('');
+        dispatch(setWritingChat(false));
+        setChatInput('');
     }
 
 
     const handleAnswerSelected = (answer: any) => {
-        console.log("progressForStopWatch", progress);
+        console.log("progressForStopWatch1", progress);
+        console.log("questionScreenType3", questionScreenType);
         if (haveAnswered)
             return;
-        setSelectedAnswer(answer);
+        dispatch(setSelectedAnswer(answer));
 
-        setHaveAnswered(true);
-        setEndTime(Date.now());
+        dispatch(setHaveAnswered(true));
+        dispatch(setEndTime(Date.now()));
         if (rightAnswer !== '' && rightAnswer === answer) {
-            setAnsweredRight(true);
+            dispatch(setAnsweredRight(true));
             if (startTime && endTime) {
-                setTimeDifference(endTime - startTime);
+                dispatch(setTimeDifference(endTime - startTime));
             }
         } else {
-            setAnsweredRight(false);
+            dispatch(setAnsweredRight(false));
         }
         console.log("haveAnswered", haveAnswered);
         console.log("answeredRight", answeredRight);
@@ -208,40 +233,34 @@ const Agora = ({ joined }: AgoraProps) => {
 
 
     const startTimer = () => {
-        console.log("progressForStopWatch", progress);
-        console.log("progress1 ", progress);
-        setTimeout(incTimer, 1000);
+        console.log("questionScreenType4", questionScreenType);
+        setTimeout(() => incTimer(progress, dispatch), 1000);
     }
 
-    function incTimer() {
-        setProgressForStopWatch(prevProgress => {
-            const newProgress = prevProgress + 1;
-
-            if (newProgress < 10) {
-                setTimeout(incTimer, 1000);
-            }
-
-            return newProgress;
-        });
-
-    }
+    const incTimer = (currentProgress: number, dispatch: Dispatch<AnyAction>) => {
+        console.log("questionScreenType5", questionScreenType);
+        if (currentProgress < 10) {
+            dispatch(incrementProgress());
+            setTimeout(() => incTimer(currentProgress + 1, dispatch), 1000);
+        }
+    };
 
     const answerMarking = useCallback(() => {
         console.log("haveAnswered", haveAnswered);
         console.log("answeredRight", answeredRight);
-        console.log("questionScreenType Now", questionScreenType);
+        console.log("questionScreenType2", questionScreenType);
         if (haveAnswered) {
             if (answeredRight) {
-                setQuestionScreenType(1);
-                setSelectedButton({ backgroundColor: '#32bd01', });
+                dispatch(setQuestionScreenType(1));
+                dispatch(setSelectedButton({ backgroundColor: '#32bd01', }));
                 console.log("Answer check: Answered Right");
             } else {
-                setQuestionScreenType(2);
-                setSelectedButton({ backgroundColor: '#ec5632', });
+                dispatch(setQuestionScreenType(2));
+                dispatch(setSelectedButton({ backgroundColor: '#ec5632', }));
                 console.log("Answer check: Answered Wrong");
             }
         } else {
-            setQuestionScreenType(3);
+            dispatch(setQuestionScreenType(3));
             console.log("Answer check: Didnt Answered");
         }
         // console.log("questionScreenType3", questionScreenType);
@@ -253,32 +272,46 @@ const Agora = ({ joined }: AgoraProps) => {
         }
     }, [markAnswers, answerMarking]);
 
+    useEffect(() => {
+        if (questionRcvd && optionsRcvd.length > 0) {
+            handleQuestionInitialisation();
+        }
+    }, [questionRcvd, optionsRcvd]);
 
-    function handleQuestionInitialisation() {
-        setSelectedAnswer('');
-        setQuestionScreenType(0);
-        setShowingQuestion(true);
-        setStartTime(Date.now());
-        setAnsweredRight(false);
-        setHaveAnswered(false);
-        setSelectedButton({ backgroundColor: '#f82d87', });
-        console.log("questionScreenType", questionScreenType);
+
+
+    const handleQuestionInitialisation = useCallback(() => {
+        dispatch(setMarkAnswers(false));
+        dispatch(setSelectedAnswer(''));
+        dispatch(setQuestionScreenType(0));
+        dispatch(setShowingQuestion(true));
+        dispatch(setStartTime(Date.now()));
+        dispatch(setAnsweredRight(false));
+        dispatch(setHaveAnswered(false));
+        dispatch(setSelectedButton({ backgroundColor: '#f82d87', }));
+        console.log("questionScreenType1", questionScreenType);
         console.log("progressForStopWatch", progress);
-        setProgressForStopWatch(0);
+        dispatch(setProgress(0));
         startTimer();
 
         setTimeout(() => {
-            setQuestionScreenType(4);
+            dispatch(setQuestionScreenType(4));
         }, 10000);
 
         setTimeout(() => {
-            setMarkAnswers(true);
+            dispatch(setMarkAnswers(true));
         }, 15400);
 
         setTimeout(() => {
-            setShowingQuestion(false);
+            dispatch(setShowingQuestion(false));
         }, 25000);
-    }
+    }, [showingQuestion, markAnswers, questionScreenType, progress, selectedAnswer
+        , questionScreenType
+        , showingQuestion
+        , startTime
+        , answeredRight
+        , haveAnswered
+        , selectedButton]);
 
     const join = async () => {
         if (isJoined) {
@@ -297,7 +330,7 @@ const Agora = ({ joined }: AgoraProps) => {
                     clientRoleType: ClientRoleType.ClientRoleBroadcaster
                 });
             } else {
-                setIsJoined(true);
+                dispatch(setIsJoined(true));
                 agoraEngineRef.current?.joinChannel(fetchedToken, channelName, uid, {
                     clientRoleType: ClientRoleType.ClientRoleAudience
                 });
@@ -345,8 +378,8 @@ const Agora = ({ joined }: AgoraProps) => {
     const leave = async () => {
         try {
             agoraEngineRef.current?.leaveChannel();
-            setRemoteUid(0);
-            setIsJoined(false);
+            dispatch(setRemoteUid(0));
+            dispatch(setIsJoined(false));
             // showMessage('You left the channel');
             // await rtmEngineRef?.leaveChannel('demoChannel').catch((e) => console.log(e));
             await rtmEngineRef?.logout().catch((e) => console.log(e));;
@@ -368,7 +401,7 @@ const Agora = ({ joined }: AgoraProps) => {
             agoraEngine.registerEventHandler({
                 onJoinChannelSuccess: (_connection, Uid) => {
                     // showMessage('Successfully joined the channel ' + channelName);
-                    setIsJoined(true);
+                    dispatch(setIsJoined(true));
                 },
                 onUserJoined: (_connection, Uid) => {
                     // showMessage('Remote user joined with uid ' + Uid);
@@ -397,13 +430,13 @@ const Agora = ({ joined }: AgoraProps) => {
     const addPlayer = useCallback((Uid: any) => {
         console.log("online", remoteUid, Uid);
         if (remoteUid === 0) {
-            setRemoteUid(Uid);
+            dispatch(setRemoteUid(Uid));
         }
     }, [remoteUid]);
     const removePlayer = useCallback((Uid: any) => {
         console.log("offline", remoteUid, Uid);
         if (remoteUid == Uid) {
-            setRemoteUid(0);
+            dispatch(setRemoteUid(0));
         }
     }, [remoteUid]);
 
@@ -414,7 +447,7 @@ const Agora = ({ joined }: AgoraProps) => {
         });
 
         rtmEngineRef.on('channelMessageReceived', (evt) => {
-            handleChannelMessageReceived(evt, pushChatArr);
+            handleChannelMessageReceived(evt, pushChatArr, setQuestionAndAns);
         });
 
         rtmEngineRef.on('messageReceived', (evt) => {
@@ -428,6 +461,10 @@ const Agora = ({ joined }: AgoraProps) => {
         });
 
     }, []);
+
+    useEffect(() => {
+        console.log("Updated questionScreenType", questionScreenType);
+    }, [questionScreenType]);
 
     useEffect(() => {
         // Initialize Agora engine when the app starts
@@ -466,111 +503,20 @@ const Agora = ({ joined }: AgoraProps) => {
     }
 
     if (!isJoined || isHost || remoteUid == 0) {
-        return (
-            <Text style={{
-                flex: 1,
-                justifyContent: 'center',
-                textAlign: 'center',
-                alignSelf: 'center',
-                flexDirection: 'column',
-                paddingHorizontal: 20,
-                paddingTop: '50%',
-                fontSize: 20,
-                color: 'white'
-            }}>Game has not yet started.{"\n"} Wait for the fun to begin !</Text>
-
-        );
+        return <WaitingText />;
     } else {
         if (showingQuestion) {
             return (
-                <SafeAreaView style={styles.middle}>
-                    <View style={styles.imageContainer}>
-                        <View style={styles.scroll}>
-                            <React.Fragment key={remoteUid}>
-                                <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
-                            </React.Fragment>
-                        </View>
-                    </View>
-
-
-                    <LinearGradient style={styles.quizContainer} colors={['rgba(20, 20, 20, 0.1)', 'rgba(20, 20, 20, 1)']} start={{ x: 0.5, y: 0.1 }}>
-                        <View style={styles.circleContainer}>
-                            <ProgressCircle progress={progress} screen={questionScreenType} />
-                        </View>
-                        <View style={styles.questionContainer}>
-                            <Text style={styles.questionText}>{questionRcvd}</Text>
-                            {/* <Text style={styles.questionText}>Which of the following is national bird of India</Text> */}
-                        </View>
-                        <View style={styles.answerContainer}>
-                            <TouchableOpacity
-                                style={[
-                                    styles.answerButton,
-                                    selectedAnswer == optionsRcvd[0] ? selectedButton : null,
-                                ]}
-                                onPress={() => handleAnswerSelected(optionsRcvd[0])}>
-                                <Text style={styles.answerText}>{optionsRcvd[0]}</Text>
-                                {/* <Text style={styles.answerText}>Parrot</Text> */}
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.answerButton,
-                                    selectedAnswer == optionsRcvd[1] ? selectedButton : null,
-                                ]}
-                                onPress={() => handleAnswerSelected(optionsRcvd[1])}>
-                                <Text style={styles.answerText}>{optionsRcvd[1]}</Text>
-                                {/* <Text style={styles.answerText}>Sparrow</Text> */}
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.answerButton,
-                                    selectedAnswer == optionsRcvd[2] ? selectedButton : null,
-                                ]}
-                                onPress={() => handleAnswerSelected(optionsRcvd[2])}>
-                                <Text style={styles.answerText}>{optionsRcvd[2]}</Text>
-                                {/* <Text style={styles.answerText}>Hen</Text> */}
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[
-                                    styles.answerButton,
-                                    selectedAnswer == optionsRcvd[3] ? selectedButton : null,
-                                ]}
-                                onPress={() => handleAnswerSelected(optionsRcvd[3])}>
-                                <Text style={styles.answerText}>{optionsRcvd[3]}</Text>
-                                {/* <Text style={styles.answerText}>Peacock</Text> */}
-                            </TouchableOpacity>
-
-                        </View>
-                        {/* Footer */}
-                        <View style={styles.footer}>
-                            <TouchableOpacity style={styles.footerButton}>
-                                <Image
-                                    source={require('../Assets/Images/5050.png')}
-                                    style={styles.footerButtonImg}
-                                />
-                            </TouchableOpacity>
-                            {/* <LinearGradient colors={['#f820ab', '#f6493']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} > */}
-                            <TouchableOpacity style={styles.footerButton}>
-                                <Image
-                                    source={require('../Assets/Images/audiencePoll.png')}
-                                    style={styles.footerButtonImg}
-                                />
-                            </TouchableOpacity >
-
-                            <TouchableOpacity style={styles.footerButton}>
-                                <Image
-                                    source={require('../Assets/Images/bestOf2.png')}
-                                    style={styles.footerButtonImg}
-                                />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.footerButton}>
-                                <Image
-                                    source={require('../Assets/Images/heartLine.png')}
-                                    style={styles.footerButtonImg}
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    </LinearGradient>
-                </SafeAreaView>
+                <QuizScreen
+                    progress={progress}
+                    questionScreenType={questionScreenType}
+                    questionRcvd={questionRcvd}
+                    optionsRcvd={optionsRcvd}
+                    selectedAnswer={selectedAnswer}
+                    handleAnswerSelected={handleAnswerSelected}
+                    remoteUid={remoteUid}
+                    selectedButton={selectedButton}
+                />
             );
         } else {
             return (
@@ -590,14 +536,14 @@ const Agora = ({ joined }: AgoraProps) => {
                             {inSpotlight ? (
                                 <React.Fragment >
                                     <View style={{ flex: 1, flexDirection: 'column' }}>
-                                        <RtcSurfaceView canvas={{ uid: remoteUid }} style={{ flex: 1, }} />
+                                        <RtcSurfaceView canvas={{ uid: remoteUid.valueOf() }} style={{ flex: 1, }} />
                                         <RtcSurfaceView canvas={{ uid: 0 }} style={{ flex: 1, }} />
                                     </View>
                                 </React.Fragment>
 
                             ) : (
-                                <React.Fragment key={remoteUid}>
-                                    <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
+                                <React.Fragment key={remoteUid.valueOf()}>
+                                    <RtcSurfaceView canvas={{ uid: remoteUid.valueOf() }} style={styles.videoView} />
                                 </React.Fragment>
                             )}
                         </View>
@@ -617,7 +563,7 @@ const Agora = ({ joined }: AgoraProps) => {
                                     </View>
                                 ))}
                             </ScrollView>
-                            <LinearGradient
+                            {/* <LinearGradient
                                 colors={['rgba(100, 100, 100, 0.5)', 'rgba(100, 100, 100, 0)']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 0, y: 1 }}
@@ -628,7 +574,7 @@ const Agora = ({ joined }: AgoraProps) => {
                                     top: 0,
                                     height: 50, // Adjust the height of the fading effect
                                 }}
-                            />
+                            /> */}
                         </View>
 
                         {/* Button */}
@@ -636,8 +582,8 @@ const Agora = ({ joined }: AgoraProps) => {
                             <View style={{ flex: 0.35, flexDirection: 'row' }}>
                                 <TextInput
                                     style={{ flex: 1, padding: 10, backgroundColor: '#f2f2f2', borderRadius: 30, marginHorizontal: 10, marginVertical: 5 }}
-                                    value={chat}
-                                    onChangeText={setChat}
+                                    value={chatInput}
+                                    onChangeText={setChatInput}
                                 />
                                 <TouchableOpacity onPress={handleChatPress} style={{
                                     position: 'absolute',
@@ -747,17 +693,15 @@ const Agora = ({ joined }: AgoraProps) => {
     // }
     function setQuestionAndAns(data: any) {
         console.log("Got the question: ", data[1]);
-        setQuestion(data[1]);
+        dispatch(setQuestionRcvd(data[1]));
         let tempArr = [];
         tempArr.push(data[2]);
         tempArr.push(data[3]);
         tempArr.push(data[4]);
         tempArr.push(data[5]);
-        setOptions(tempArr);
+        dispatch(setOptionsRcvd(tempArr));
 
-        setRightAnswer(data[6]);
-
-        handleQuestionInitialisation();
+        dispatch(setRightAnswer(data[6]));
 
         // const timer = setInterval(() => {
         //     setProgress(prevProgress => prevProgress + 1);
