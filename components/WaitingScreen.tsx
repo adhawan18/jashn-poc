@@ -1,10 +1,10 @@
 import { StyleSheet, Text } from "react-native";
+import RulesScreen from "./RulesScreen ";
+const myTopImage = require('../Assets/Images/waitWBG1.gif');
+
 
 const WaitingText = () => (
-    <Text
-        style={styles.centerText}>
-        Game has not yet started.{"\n"} Wait for the fun to begin !
-    </Text>
+    <RulesScreen topImg={myTopImage}/>
 );
 
 const styles = StyleSheet.create({

@@ -33,7 +33,6 @@ const QuizScreen = ({
     <SafeAreaView style={styles.middle}>
         <View style={styles.score}>
             <Text >score : {currentScore}</Text>
-            {/* <Text style={styles.questionText}>Which of the following is national bird of India</Text> */}
         </View>
         <View style={styles.imageContainer}>
             <View style={styles.scroll}>
@@ -128,7 +127,7 @@ const styles = StyleSheet.create({
     score: {
         backgroundColor: '#00ff00',
         paddingHorizontal: 8,
-        color: '#0000ff'
+        color: '#0000ff',
     },
     scroll: {
         flex: 1,

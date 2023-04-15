@@ -1,12 +1,26 @@
 import { Circle, Svg, LinearGradient, Stop, Text, SvgUri } from 'react-native-svg';
 import { Image, View } from 'react-native';
+import { useEffect, useState } from 'react';
 
 interface ProgressCircleProps {
-    progress: any;
+    progress: number;
     screen: any;
 }
 
 const ProgressCircle = ({ progress, screen }: ProgressCircleProps) => {
+    const [strokeColor, setStrokeColor] = useState('#00a912');
+
+    useEffect(() => {
+        if (progress > 6) {
+            setStrokeColor('#f44336');
+        } else if (progress > 4) {
+            setStrokeColor('#FFFF00');
+        } else {
+            setStrokeColor('#00a912');
+        }
+    }, [progress]);
+
+
     const circumference = 2 * Math.PI * 50; // the circumference of the circle with a radius of 50
 
     if (screen == 0) {
@@ -21,7 +35,7 @@ const ProgressCircle = ({ progress, screen }: ProgressCircleProps) => {
                     cx="60"
                     cy="60"
                     r="50"
-                    stroke="#00ff00"
+                    stroke={strokeColor}
                     strokeWidth="10"
                     fill="transparent"
                     strokeDasharray={`${circumference} ${circumference}`}
@@ -32,6 +46,7 @@ const ProgressCircle = ({ progress, screen }: ProgressCircleProps) => {
                 <Text x="60" y="60" textAnchor="middle" alignmentBaseline="central" fontSize="35" fill="white">
                     {10 - progress}
                 </Text>
+
             </Svg>
         )
     }

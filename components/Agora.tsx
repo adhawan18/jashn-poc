@@ -4,7 +4,6 @@ import { PermissionsAndroid, Platform } from 'react-native';
 import { ClientRoleType, createAgoraRtcEngine, IRtcEngine, RtcSurfaceView, ChannelProfileType } from 'react-native-agora';
 import RtmEngine from 'agora-react-native-rtm';
 import LinearGradient from 'react-native-linear-gradient';
-import ProgressCircle from './ProgressTimer';
 import Leaderboard from './Leaderboard';
 import { ScrollView } from 'react-native-gesture-handler';
 import WaitingText from './WaitingScreen';
@@ -48,8 +47,8 @@ const { width, height } = Dimensions.get('window');
 const aspectRatio = width / height;
 
 const appId = '70e1a03bf90645718299160e0fb1b38e';
-const channelName = 'test';
-const rtmChannel = 'demoChannel';
+const channelName = 'test9';
+const rtmChannel = 'demoChannel9';
 const uid = parseInt(generateRandomNumber());
 
 function generateRandomNumber(): string {
@@ -210,7 +209,7 @@ const Agora = ({ joined }: AgoraProps) => {
     const openChatScreen = () => {
         dispatch(setWritingChat(true));
     }
-    const clsoeChatScreen = () => {
+    const closeChatScreen = () => {
         dispatch(setWritingChat(false));
         setChatInput('');
     }
@@ -253,6 +252,10 @@ const Agora = ({ joined }: AgoraProps) => {
     }, [haveAnswered]);
 
     const handleAnswerSelected = (answer: any) => {
+        console.log("progressForStopWatch1", progress);
+        console.log("questionScreenType3", questionScreenType);
+        if (haveAnswered)
+            return;
         dispatch(setSelectedAnswer(answer));
         dispatch(setHaveAnswered(true));
         dispatch(setEndTime(Date.now()));
@@ -278,15 +281,15 @@ const Agora = ({ joined }: AgoraProps) => {
         if (haveAnswered) {
             if (answeredRight) {
                 dispatch(setQuestionScreenType(1));
-                dispatch(setSelectedButton({ backgroundColor: '#32bd01', }));
+                dispatch(setSelectedButton({ backgroundColor: '#00a912', }));
                 console.log("Answer check: Answered Right");
             } else {
                 dispatch(setQuestionScreenType(2));
-                dispatch(setSelectedButton({ backgroundColor: '#ec5632', }));
+                dispatch(setSelectedButton({ backgroundColor: '#f44336', }));
                 console.log("Answer check: Answered Wrong");
             }
         } else {
-            dispatch(setQuestionScreenType(3));
+            dispatch(setQuestionScreenType(2));
             console.log("Answer check: Didnt Answered");
         }
         // console.log("questionScreenType3", questionScreenType);
@@ -307,6 +310,7 @@ const Agora = ({ joined }: AgoraProps) => {
 
 
     const handleQuestionInitialisation = useCallback(() => {
+
         dispatch(setMarkAnswers(false));
         dispatch(setSelectedAnswer(''));
         dispatch(setQuestionScreenType(0));
@@ -332,12 +336,11 @@ const Agora = ({ joined }: AgoraProps) => {
             dispatch(setShowingQuestion(false));
         }, 25000);
     }, [showingQuestion, markAnswers, questionScreenType, progress, selectedAnswer
-        , questionScreenType
         , showingQuestion
         , startTime
         , answeredRight
         , haveAnswered
-        , selectedButton]);
+        , selectedButton,startTimer]);
 
     const join = async () => {
         if (isJoined) {
@@ -489,10 +492,6 @@ const Agora = ({ joined }: AgoraProps) => {
     }, []);
 
     useEffect(() => {
-        console.log("Updated questionScreenType", questionScreenType);
-    }, [questionScreenType]);
-
-    useEffect(() => {
         // Initialize Agora engine when the app starts
         async function setup() {
             if (joined) {
@@ -611,7 +610,17 @@ const Agora = ({ joined }: AgoraProps) => {
                                     style={{ flex: 1, padding: 10, backgroundColor: '#f2f2f2', borderRadius: 30, marginHorizontal: 10, marginVertical: 5 }}
                                     value={chatInput}
                                     onChangeText={setChatInput}
+                                    maxLength={25}
                                 />
+                                <Text
+                                    style={{
+                                        position: 'absolute',
+                                        right: '10%',
+                                        top: '100%',
+                                        fontSize: 12, color: chatInput.length === 25 ? 'red' : '#888'
+                                    }}>
+                                    {chatInput.length}/25
+                                </Text>
                                 <TouchableOpacity onPress={handleChatPress} style={{
                                     position: 'absolute',
                                     right: '10%',
@@ -673,7 +682,7 @@ const Agora = ({ joined }: AgoraProps) => {
                                     backgroundColor: '#f82d87',
                                     borderRadius: 50,
                                     padding: 10
-                                }} onPress={() => clsoeChatScreen()}>
+                                }} onPress={() => closeChatScreen()}>
                                     <Image
                                         source={require('../Assets/Images/crossWhite.png')}
                                         style={{
