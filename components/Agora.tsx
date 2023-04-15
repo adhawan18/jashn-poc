@@ -35,10 +35,10 @@ import {
     setChatArr,
     incrementProgress,
     incrementChatId,
-    updateChatArr
+    updateChatArr,
 
 } from '../Actions/gameActions';
-import { setIsHost, setRemoteUid } from '../Actions/agoraActions';
+import { setIsHost, setRemoteUid, setChannelMembers } from '../Actions/agoraActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnyAction } from 'redux';
 
@@ -71,6 +71,7 @@ const Agora = ({ joined }: AgoraProps) => {
 
     const isHost = useSelector((state: RootState) => state.agoraReducer.isHost);
     const remoteUid = useSelector((state: RootState) => state.agoraReducer.remoteUid);
+    const channelMembers = useSelector((state: RootState) => state.agoraReducer.channelMembers);
 
     const isJoined = useSelector((state: RootState) => state.mainGameReducer.isJoined);
     const questionRcvd = useSelector((state: RootState) => state.mainGameReducer.questionRcvd);
@@ -187,8 +188,8 @@ const Agora = ({ joined }: AgoraProps) => {
         } else {
             let data = text.split('///');
             // showMessage(text);
-            console.log("text :", text);
-            console.log("data :", data);
+            // console.log("text :", text);
+            // console.log("data :", data);
             if (data[0] == 'question') {
                 data.shift();
                 // console.log("data :", data);
@@ -196,6 +197,13 @@ const Agora = ({ joined }: AgoraProps) => {
             } else if (data[0] == 'chat') {
                 data.shift();
                 pushChatArrFunc(data);
+            } else if (data[0] == 'count') {
+                console.log("count", data);
+                if (data[1] >= 1000) {
+                    dispatch(setChannelMembers(((data[1] / 1000).toFixed(1) + "K")));
+                } else {
+                    dispatch(setChannelMembers(data[1]));
+                }
             }
             else {
                 // console.log("text :", text);
@@ -340,7 +348,7 @@ const Agora = ({ joined }: AgoraProps) => {
         , startTime
         , answeredRight
         , haveAnswered
-        , selectedButton,startTimer]);
+        , selectedButton, startTimer]);
 
     const join = async () => {
         if (isJoined) {

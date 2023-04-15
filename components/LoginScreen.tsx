@@ -13,6 +13,7 @@ const LoginScreen = () => {
     const isJoined = useSelector((state: RootState) => state.mainGameReducer.isJoined);
     const isHost = useSelector((state: RootState) => state.agoraReducer.isHost);
     const remoteUid = useSelector((state: RootState) => state.agoraReducer.remoteUid);
+    const channelMembers = useSelector((state: RootState) => state.agoraReducer.channelMembers);
 
     const dispatch = useDispatch();
 
@@ -77,7 +78,7 @@ const LoginScreen = () => {
                 {(!isJoined || isHost || remoteUid == 0) ? (<></>) : (
                     <View style={{ width: '25%', padding: 5, flexDirection: 'row', backgroundColor: '#7b787d', borderRadius: 20, justifyContent: 'space-around', alignItems: 'center' }}>
                         <Image source={require('../Assets/Images/liveEye.png')} style={{ width: '25%', height: 20, resizeMode: 'contain', }} />
-                        <Text style={{ color: 'white' }}>899</Text>
+                        <Text style={{ color: 'white' }}>{channelMembers}</Text>
                     </View>
                 )}
 

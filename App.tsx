@@ -3,7 +3,7 @@ import { Provider} from 'react-redux';
 import LoginScreen from './components/LoginScreen';
 import store from './States/store';
 import { LogBox } from 'react-native';
-LogBox.ignoreAllLogs()
+LogBox.ignoreAllLogs();
 
 const App = () => (
   
