@@ -47,8 +47,8 @@ const { width, height } = Dimensions.get('window');
 const aspectRatio = width / height;
 
 const appId = '70e1a03bf90645718299160e0fb1b38e';
-const channelName = 'test';
-const rtmChannel = 'demoChannel';
+const channelName = 'test9';
+const rtmChannel = 'demoChannel9';
 const uid = parseInt(generateRandomNumber());
 
 function generateRandomNumber(): string {

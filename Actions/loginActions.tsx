@@ -8,3 +8,8 @@ export const setOtpSent = (otpSent: boolean) => ({
     type: 'SET_OTP_SENT',
     payload: otpSent,
 });
+
+export const setShowNavigationScreens = (showNavigationScreens: boolean) => ({
+    type: 'SET_SHOW_NAVIGATION_SCREENS',
+    payload: showNavigationScreens,
+});

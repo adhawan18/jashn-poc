@@ -168,13 +168,6 @@ const Leaderboard = () => {
           ))}
         </ScrollView>
       </View>
-      <View style={styles.footer}>
-        {/* <MaterialIcons name="home" size={28} style={styles.icon} />
-        <MaterialIcons name="search" size={28} style={styles.icon} />
-        <MaterialIcons name="add" size={28} style={styles.icon} />
-        <MaterialIcons name="favorite" size={28} style={styles.icon} />
-        <MaterialIcons name="person" size={28} style={styles.icon} /> */}
-      </View>
     </View>
   );
 }
@@ -185,15 +178,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#12121b',
   },
   header: {
-    backgroundColor: '#201d28',
-    paddingTop: 20,
-    paddingBottom: 20,
+    backgroundColor: 'black',
+    justifyContent:'center',
     alignItems: 'flex-start',
     paddingLeft: 20,
+    height:'7.5%',
   },
   headerTitle: {
     color: '#dadadb',
-    fontSize: 28,
+    fontSize: 25,
     fontWeight: 'bold',
   },
   logoContainer: {

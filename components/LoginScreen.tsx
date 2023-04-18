@@ -5,11 +5,14 @@ import Agora from "../components/Agora";
 import PhoneNumber from "../components/noVerification";
 import OtpVerificationWindow from "../components/OtpVerification";
 import { RootState } from '../States/types';
-import { setShowMainScreen, setOtpSent } from '../Actions/loginActions';
+import { setShowMainScreen, setOtpSent ,setShowNavigationScreens } from '../Actions/loginActions';
+import MainFeed from './NavigationScreens/MainFeed';
 
 const LoginScreen = () => {
     const otpSent = useSelector((state: RootState) => state.loginReducer.otpSent);
     const showMainScreen = useSelector((state: RootState) => state.loginReducer.showMainScreen);
+    const showNavigationScreens = useSelector((state: RootState) => state.loginReducer.showNavigationScreens);
+
     const isJoined = useSelector((state: RootState) => state.mainGameReducer.isJoined);
     const isHost = useSelector((state: RootState) => state.agoraReducer.isHost);
     const remoteUid = useSelector((state: RootState) => state.agoraReducer.remoteUid);
@@ -23,6 +26,16 @@ const LoginScreen = () => {
     const handleOtpJoin = () => {
         dispatch(setShowMainScreen(true));
     };
+
+    const handleShowNavigationScreenBtn = () => {
+        dispatch(setShowNavigationScreens(true));
+    };
+
+    if(showNavigationScreens){
+        return (
+            <MainFeed/>
+        )
+    }
 
     if (!showMainScreen && !otpSent) {
         return (
@@ -41,6 +54,21 @@ const LoginScreen = () => {
                     onPress={handleJoinButtonPress}
                 >
                     <Text style={styles.joinButtonText}>Join</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={{
+                        backgroundColor: '#ed5616',
+                        alignItems: 'center',
+                        paddingVertical: 16,
+                        borderRadius: 8,
+                        position: 'absolute',
+                        bottom: 150,
+                        left: '10%',
+                        width: '80%'
+                    }}
+                    onPress={handleShowNavigationScreenBtn}
+                >
+                    <Text style={styles.joinButtonText}>See Navigation Screens</Text>
                 </TouchableOpacity>
             </ImageBackground>
             // <Leaderboard />
