@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, BackHandler } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setEditScreenNo, setInEditingMode } from '../../Actions/navigationActions';
+import { RootState } from '../../States/types';
 
 interface RadioButtonProps {
     title: string;
@@ -20,6 +21,7 @@ const RadioButton = ({ title, image, isSelected, onPress }: RadioButtonProps) =>
 
 const PaymentOptions = () => {
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
+    const cashAmtForRecharge = useSelector((state: RootState) => state.navigationReducer.cashAmtForRecharge);
     const dispatch = useDispatch();
 
     useEffect(() => {

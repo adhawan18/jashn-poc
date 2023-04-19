@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, BackHandler } from 'react-native';
 import { useDispatch } from 'react-redux';
-import { setEditScreenNo, setFooterItem, setInEditingMode } from '../../Actions/navigationActions';
+import { setEditScreenNo, setFooterItem, setInEditingMode, setCashAmtForRecharge } from '../../Actions/navigationActions';
 const MyWallet = () => {
     const [enteredAmount, setEnteredAmount] = useState('');
     const dispatch= useDispatch();
@@ -27,6 +27,7 @@ const MyWallet = () => {
         console.log(cash);
         dispatch(setInEditingMode(true));
         dispatch(setEditScreenNo(2));
+        dispatch(setCashAmtForRecharge(cash));
     }
 
     return (

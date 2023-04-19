@@ -12,3 +12,9 @@ export const setEditScreenNo = (editScreenNo: number) => ({
     type: 'SET_EDIT_SCREEN_NO',
     payload: editScreenNo,
 });
+
+export const setCashAmtForRecharge = (cashAmtForRecharge: string) => ({
+    type: 'SET_CASH_AMT_FOR_RECHARGE',
+    payload: cashAmtForRecharge,
+});
+
