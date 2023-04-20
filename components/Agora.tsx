@@ -41,6 +41,7 @@ import {
 import { setIsHost, setRemoteUid, setChannelMembers } from '../Actions/agoraActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnyAction } from 'redux';
+import WavyImage from './WavyHearts';
 
 
 const { width, height } = Dimensions.get('window');
@@ -64,6 +65,11 @@ interface AgoraProps {
 }
 
 const Agora = ({ joined }: AgoraProps) => {
+
+    const images = [
+        require('../Assets/Images/Main/coin.png'),
+    ];
+
     const [keyboardOpen, setKeyboardOpen] = useState(false);
     const agoraEngineRef = useRef<IRtcEngine>(); // Agora engine instance
     const rtmEngineRef = new RtmEngine();
@@ -198,7 +204,7 @@ const Agora = ({ joined }: AgoraProps) => {
                 data.shift();
                 pushChatArrFunc(data);
             } else if (data[0] == 'count') {
-                console.log("count", data);
+                // console.log("count", data);
                 if (data[1] >= 1000) {
                     dispatch(setChannelMembers(((data[1] / 1000).toFixed(1) + "K")));
                 } else {
@@ -297,6 +303,7 @@ const Agora = ({ joined }: AgoraProps) => {
                 console.log("Answer check: Answered Wrong");
             }
         } else {
+            // console.log(dispatch(setSelectedAnswer(answer));
             dispatch(setQuestionScreenType(2));
             console.log("Answer check: Didnt Answered");
         }
@@ -334,6 +341,7 @@ const Agora = ({ joined }: AgoraProps) => {
 
         setTimeout(() => {
             dispatch(setQuestionScreenType(4));
+            dispatch(setHaveAnswered(true));
         }, 10000);
 
         setTimeout(() => {
@@ -506,9 +514,7 @@ const Agora = ({ joined }: AgoraProps) => {
                 await setupVideoSDKEngine();
                 await join();
                 await initRTM();
-                console.log("Aasihsh");
             }
-            console.log("Aasihsh1");
         }
         setup();
         // if (startTime && endTime) {
@@ -581,6 +587,9 @@ const Agora = ({ joined }: AgoraProps) => {
                                 </React.Fragment>
                             )}
                         </View>
+                        {/* {images.map((image, index) => (
+                            <WavyImage source={require('../Assets/Images/sendBtn.png')} startPositionX={50} />
+                        ))} */}
                     </View>
 
                     <LinearGradient style={styles.chatContainer} colors={['rgba(64, 45, 116, 0.1)', 'rgba(248,46,132, 0.2)']} start={{ x: 0.5, y: 0.5 }}>
