@@ -9,6 +9,7 @@ interface ProgressCircleProps {
 
 const ProgressCircle = ({ progress, screen }: ProgressCircleProps) => {
     const [strokeColor, setStrokeColor] = useState('#00a912');
+    const [internalProgress, setInternalProgress] = useState(progress);
 
     useEffect(() => {
         if (progress > 6) {
@@ -20,8 +21,22 @@ const ProgressCircle = ({ progress, screen }: ProgressCircleProps) => {
         }
     }, [progress]);
 
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setInternalProgress((prevProgress) => {
+                if (prevProgress >= progress) {
+                    clearInterval(interval);
+                    return progress;
+                }
+                return prevProgress + 0.05;
+            });
+        }, 50);
+
+        return () => clearInterval(interval);
+    }, [progress]);
 
     const circumference = 2 * Math.PI * 50; // the circumference of the circle with a radius of 50
+    const progressOffset = ((10 - internalProgress) / 10) * circumference;
 
     if (screen == 0) {
         return (
@@ -39,7 +54,7 @@ const ProgressCircle = ({ progress, screen }: ProgressCircleProps) => {
                     strokeWidth="10"
                     fill="transparent"
                     strokeDasharray={`${circumference} ${circumference}`}
-                    strokeDashoffset={(-(progress - 10) / 10) * circumference}
+                    strokeDashoffset={progressOffset}
                     transform={'rotate(-90 60 60)'}
                     strokeLinecap="round"
                 />

@@ -281,10 +281,10 @@ const Agora = ({ joined }: AgoraProps) => {
     }
 
     const incTimer = (currentProgress: number, dispatch: Dispatch<AnyAction>) => {
-        console.log("questionScreenType5", questionScreenType);
         if (currentProgress < 10) {
             dispatch(incrementProgress());
             setTimeout(() => incTimer(currentProgress + 1, dispatch), 1000);
+            console.log(currentProgress, " secs up");
         }
     };
 
@@ -342,11 +342,12 @@ const Agora = ({ joined }: AgoraProps) => {
         setTimeout(() => {
             dispatch(setQuestionScreenType(4));
             dispatch(setHaveAnswered(true));
-        }, 10000);
+            console.log("10 secs up");
+        }, 11000);
 
         setTimeout(() => {
             dispatch(setMarkAnswers(true));
-        }, 15400);
+        }, 16400);
 
         setTimeout(() => {
             dispatch(setShowingQuestion(false));
@@ -575,7 +576,7 @@ const Agora = ({ joined }: AgoraProps) => {
                         <View style={styles.scroll}>
                             {inSpotlight ? (
                                 <React.Fragment >
-                                    <View style={{ flex: 1, flexDirection: 'column' }}>
+                                    <View style={styles.videoViewSpotlight}>
                                         <RtcSurfaceView canvas={{ uid: remoteUid.valueOf() }} style={{ flex: 1, }} />
                                         <RtcSurfaceView canvas={{ uid: 0 }} style={{ flex: 1, }} />
                                     </View>
@@ -775,12 +776,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         resizeMode: 'cover',
     },
-    videoViewHalf: {
+    videoViewSpotlight: {
+        flexDirection: 'column',
         width: '100%',
         aspectRatio: aspectRatio,
         alignSelf: 'center',
         justifyContent: 'center',
-        resizeMode: 'cover',
     },
     btnContainer: {
         flexDirection: 'row',
