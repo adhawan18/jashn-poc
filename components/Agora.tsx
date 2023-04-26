@@ -36,13 +36,13 @@ import {
     incrementProgress,
     incrementChatId,
     updateChatArr,
+    incHeartCount,
 
 } from '../Actions/gameActions';
 import { setIsHost, setRemoteUid, setChannelMembers } from '../Actions/agoraActions';
 import { useDispatch, useSelector } from 'react-redux';
 import { AnyAction } from 'redux';
-import WavyImage from './WavyHearts';
-
+import FloatingHearts from './floating-hearts/FloatingHearts';
 
 const { width, height } = Dimensions.get('window');
 const aspectRatio = width / height;
@@ -66,9 +66,16 @@ interface AgoraProps {
 
 const Agora = ({ joined }: AgoraProps) => {
 
-    const images = [
-        require('../Assets/Images/Main/coin.png'),
-    ];
+    const handleHeartPress = () => {
+        rtmEngineRef.sendMessageByChannelId(rtmChannel, "add-hearts")
+        .then(() => {
+            console.log('Message sent successfully');
+            dispatch(incHeartCount());
+        })
+        .catch(error => {
+            console.log('Error sending message: ', error);
+        });
+    };
 
     const [keyboardOpen, setKeyboardOpen] = useState(false);
     const agoraEngineRef = useRef<IRtcEngine>(); // Agora engine instance
@@ -103,6 +110,8 @@ const Agora = ({ joined }: AgoraProps) => {
 
     const chatArr = useSelector((state: RootState) => state.mainGameReducer.chatArr);
     const nextChatId = useSelector((state: RootState) => state.mainGameReducer.nextChatId);
+
+    const heartCount = useSelector((state: RootState) => state.mainGameReducer.heartCount);
 
     const [chatInput, setChatInput] = useState('');
 
@@ -191,7 +200,12 @@ const Agora = ({ joined }: AgoraProps) => {
             console.log("text :", text);
             setClientRole('audience');
             dispatch(setInSpotlight(false));
-        } else {
+        }
+        else if (text == "add-hearts") {
+            console.log("text :", text);
+            dispatch(incHeartCount());
+        }
+        else {
             let data = text.split('///');
             // showMessage(text);
             // console.log("text :", text);
@@ -561,16 +575,6 @@ const Agora = ({ joined }: AgoraProps) => {
             );
         } else {
             return (
-
-                //             {isJoined && !isHost && remoteUid !== 0 ? (
-                //                 <React.Fragment key={remoteUid}>
-                //                     <RtcSurfaceView canvas={{ uid: remoteUid }} style={styles.videoView} />
-                //                     {/* <Text>Remote user uid: {remoteUid}</Text> */}
-                //                 </React.Fragment>
-                //             ) : (
-                //                 <Text>{isJoined && !isHost ? 'Waiting for a remote user to join' : ''}</Text>
-                //             )}
-
                 <View style={styles.middle}>
                     <View style={styles.imageContainer}>
                         <View style={styles.scroll}>
@@ -588,9 +592,7 @@ const Agora = ({ joined }: AgoraProps) => {
                                 </React.Fragment>
                             )}
                         </View>
-                        {/* {images.map((image, index) => (
-                            <WavyImage source={require('../Assets/Images/sendBtn.png')} startPositionX={50} />
-                        ))} */}
+                        {/* <FloatingHearts count={count} /> */}
                     </View>
 
                     <LinearGradient style={styles.chatContainer} colors={['rgba(64, 45, 116, 0.1)', 'rgba(248,46,132, 0.2)']} start={{ x: 0.5, y: 0.5 }}>
@@ -681,7 +683,8 @@ const Agora = ({ joined }: AgoraProps) => {
                                     backgroundColor: 'rgba(255,255,255,0.1)',
                                     borderRadius: 50,
                                     padding: 10
-                                }}>
+                                }}
+                                    onPress={handleHeartPress}>
                                     <Image
                                         source={require('../Assets/Images/heartWhite.png')}
                                         style={{
@@ -733,7 +736,7 @@ const Agora = ({ joined }: AgoraProps) => {
 
                         )}
                     </LinearGradient>
-
+                    <FloatingHearts count={heartCount} />
                 </View >
 
 
@@ -741,10 +744,6 @@ const Agora = ({ joined }: AgoraProps) => {
         }
     }
 
-
-    // function showMessage(msg: string) {
-    //     setMessage(msg);
-    // }
     function setQuestionAndAns(data: any) {
         console.log("Got the question: ", data[1]);
         dispatch(setQuestionRcvd(data[1]));
@@ -756,10 +755,6 @@ const Agora = ({ joined }: AgoraProps) => {
         dispatch(setOptionsRcvd(tempArr));
 
         dispatch(setRightAnswer(data[6]));
-
-        // const timer = setInterval(() => {
-        //     setProgress(prevProgress => prevProgress + 1);
-        // }, 1000);
     }
 };
 

@@ -129,3 +129,7 @@ export const updateChatArr = (tempMsgEle: object) => ({
   payload: tempMsgEle,
 });
 
+export const incHeartCount = () => ({
+  type: 'INCREMENT_HEART_COUNT',
+});
+

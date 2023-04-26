@@ -54,6 +54,7 @@ export type StateType = {
         msg: string;
     }[];
     nextChatId: number;
+    heartCount: number;
 };
 
 
@@ -88,6 +89,7 @@ const initialState: StateType = {
         },
     ],
     nextChatId: 1,
+    heartCount: 0,
 };
 
 const gameReducer = (state = initialState, action: { type: any; payload: any; }): StateType => {
@@ -156,7 +158,10 @@ const gameReducer = (state = initialState, action: { type: any; payload: any; })
             }
             return { ...state, chatArr: updatedState };
         }
-
+        case 'INCREMENT_HEART_COUNT': {
+            const newHeartCount = state.heartCount + 1;
+            return { ...state, heartCount: newHeartCount };
+        }
 
         default:
             return state;
