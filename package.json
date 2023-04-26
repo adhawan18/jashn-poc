@@ -15,6 +15,8 @@
     "agora-rn-uikit": "^5.0.1",
     "agora-rtm-sdk": "^1.6.0-205",
     "expo-linear-gradient": "^12.1.2",
+    "paytm_allinone_react-native": "^1.1.1",
+    "paytmchecksum": "^1.5.0",
     "react": "18.2.0",
     "react-native": "0.71.5",
     "react-native-agora": "^4.1.2",

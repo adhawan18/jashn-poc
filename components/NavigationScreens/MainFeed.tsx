@@ -160,7 +160,7 @@ const MainFeed = () => {
           footerItem == 1 ? (
             <HomeFeed />
           ) : footerItem == 2 ? (
-            <MyWallet />
+            <MyRewards />
           ) : footerItem == 3 ? (
             <RulesScreen topImg={ruleTopImage} />
           ) : footerItem == 4 ? (

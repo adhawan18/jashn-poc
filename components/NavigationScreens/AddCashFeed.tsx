@@ -3,6 +3,9 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, BackHandler } from 're
 import { useDispatch, useSelector } from 'react-redux';
 import { setEditScreenNo, setInEditingMode } from '../../Actions/navigationActions';
 import { RootState } from '../../States/types';
+import { CALLBACK_URL, MID, URL_SCHEME } from './../Constants';
+import { generateToken } from './../../Service';
+import AllInOneSDKManager from 'paytm_allinone_react-native';
 
 interface RadioButtonProps {
     title: string;
@@ -18,7 +21,35 @@ const RadioButton = ({ title, image, isSelected, onPress }: RadioButtonProps) =>
         <View style={[styles.radioCircle, isSelected && styles.radioCircleSelected]} />
     </TouchableOpacity>
 );
+const payNow = async () => {
 
+    let orderId = 'ORDERID_98765';
+    let amt = 101.00;
+
+    const token = await generateToken(orderId, amt);
+    // const token = "456767e65w54w54w45565";
+
+    try {
+        AllInOneSDKManager.startTransaction(
+            orderId,
+            MID,
+            token,
+            amt.toFixed(2),
+            CALLBACK_URL + orderId,
+            true,
+            true,
+            URL_SCHEME
+        )
+            .then((result) => {
+                console.log("gateway response", result);
+            })
+            .catch((err) => {
+                console.log("gateway error", err);
+            });
+    } catch (error) {
+        console.log("try catch error", error)
+    }
+}
 const PaymentOptions = () => {
     const [selectedOption, setSelectedOption] = useState<number | null>(null);
     const cashAmtForRecharge = useSelector((state: RootState) => state.navigationReducer.cashAmtForRecharge);
@@ -59,7 +90,7 @@ const PaymentOptions = () => {
                         title={option.title}
                         image={option.image}
                         isSelected={selectedOption === option.id}
-                        onPress={() => setSelectedOption(option.id)}
+                        onPress={payNow}
                     />
                 ))}
                 <TouchableOpacity style={{

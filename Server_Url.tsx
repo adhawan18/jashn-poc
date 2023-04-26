@@ -1,0 +1,2 @@
+// export const SERVER_API_URL = "http://172.20.10.3:8080/token.py";
+export const SERVER_API_URL = "https://securegw-stage.paytm.in/theia/api/v1/initiateTransaction?mid=ZpsqDd42488117746297&orderId=ACTIVE_ORDER_1"

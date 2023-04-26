@@ -3,12 +3,35 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, BackHandler } from 're
 import LinearGradient from 'react-native-linear-gradient';
 import { useDispatch } from 'react-redux';
 import { setFooterItem, setInEditingMode } from '../../Actions/navigationActions';
-
+import { Share } from 'react-native';
+import { API_URL } from '../Constants';
 
 const MyRewards = () => {
 
+    const [referralCode, setReferralCode] = useState('');
+
+    useEffect(() => {
+        // Fetch the referral code from the API and update the state
+    }, []);
+
+    const shareReferralLink = async () => {
+        try {
+            const result = await Share.share({
+                message: "Join our trivia app and use my referral code: ${referralCode}",
+                url: "www.google.com"
+            });
+            if (result.action === Share.sharedAction) {
+                console.log('Referral link shared successfully');
+            } else if (result.action === Share.dismissedAction) {
+                console.log('Referral link sharing dismissed');
+            }
+        } catch (error) {
+            console.error('Error sharing referral link:', error);
+        }
+    };
+
     const dispatch = useDispatch();
-    
+
     useEffect(() => {
         const backAction = () => {
             // Call your function here
@@ -65,7 +88,8 @@ const MyRewards = () => {
                 <View style={{ position: 'absolute', left: 10, flexDirection: 'column', marginHorizontal: 10, width: '70%' }}>
                     <Text style={{ fontSize: 20, color: 'white', justifyContent: 'center', alignItems: 'center', }}>Invite 10 people and get rewards</Text>
                     <Text style={{ fontSize: 15, color: 'rgba(255,255,255,0.4)', }}>Refer friends to get ₹10K</Text>
-                    <TouchableOpacity style={{ backgroundColor: '#69696d', width: '50%', marginVertical: 10, borderRadius: 10, padding: 5, justifyContent: 'center', alignItems: 'center' }}>
+                    <TouchableOpacity style={{ backgroundColor: '#69696d', width: '50%', marginVertical: 10, borderRadius: 10, padding: 5, justifyContent: 'center', alignItems: 'center' }}
+                        onPress={shareReferralLink}>
                         <Text style={{ fontSize: 20, color: 'white' }}>Redeem</Text>
                     </TouchableOpacity>
                 </View>
